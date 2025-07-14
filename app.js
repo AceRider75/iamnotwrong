@@ -54,43 +54,49 @@ const formatValue = (value, unit = '') => {
 };
 
 // ===== FIXED DYNAMIC LOAD LINE DRAWING UTILITY =====
-function drawLoadLine(canvas, IcSat, VceCutoff, qPoint) {
+function drawLoadLine(canvas, IcSat, VceCutoff, qPoint, snapToLoadLine = false) {
   const ctx = canvas.getContext('2d');
+
+  // Sync canvas size with CSS display size
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height;
+
   const width = canvas.width;
   const height = canvas.height;
-
   const margin = 60;
   const plotWidth = width - 2 * margin;
   const plotHeight = height - 2 * margin;
 
-  // Add 10% headroom
-  const maxIC = IcSat * 1.1;
-  const maxVCE = VceCutoff * 1.1;
+  // Convert currents from mA to μA for plotting
+  const maxIC = IcSat * 1000 * 1.1;       // μA scale with padding
+  const maxVCE = VceCutoff * 1.1;         // V scale with padding
 
-  // Clear canvas
   ctx.clearRect(0, 0, width, height);
 
   // Draw background
   ctx.fillStyle = '#f9f9f9';
   ctx.fillRect(margin, margin, plotWidth, plotHeight);
 
-  // Grid lines
+  // Draw grid lines
   ctx.strokeStyle = '#e0e0e0';
   ctx.lineWidth = 1;
   for (let i = 1; i <= 10; i++) {
     const x = margin + (i * plotWidth / 10);
     const y = margin + (i * plotHeight / 10);
+    // Vertical grid line
     ctx.beginPath();
     ctx.moveTo(x, margin);
     ctx.lineTo(x, height - margin);
     ctx.stroke();
+    // Horizontal grid line
     ctx.beginPath();
     ctx.moveTo(margin, y);
     ctx.lineTo(width - margin, y);
     ctx.stroke();
   }
 
-  // Axes
+  // Draw axes
   ctx.strokeStyle = '#333';
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -99,34 +105,49 @@ function drawLoadLine(canvas, IcSat, VceCutoff, qPoint) {
   ctx.lineTo(width - margin, height - margin);
   ctx.stroke();
 
-  // Load line (from IcSat at VCE = 0 to VCECutoff at IC = 0)
+  // Draw load line
   ctx.strokeStyle = '#2196F3';
   ctx.lineWidth = 3;
   ctx.beginPath();
-  const x1 = margin;
-  const y1 = margin + plotHeight * (1 - IcSat / maxIC); // IC max
-  const x2 = margin + plotWidth * (VceCutoff / maxVCE); // VCE max
-  const y2 = margin + plotHeight; // IC = 0
+  const x1 = margin;               // VCE = 0
+  const y1 = margin;               // IC = IcSat (top)
+  const x2 = margin + plotWidth * (VceCutoff / maxVCE);  // VCE = cutoff (right)
+  const y2 = margin + plotHeight; // IC = 0 (bottom)
   ctx.moveTo(x1, y1);
   ctx.lineTo(x2, y2);
   ctx.stroke();
 
-  // === Q-Point Calculation ===
-  const qX = margin + plotWidth * (qPoint.VCE / maxVCE);
-  const qY = margin + plotHeight * (1 - qPoint.IC / maxIC); // Correct flip
+  // Calculate Q-point coordinates
+  let actualVCE = qPoint.VCE;
+  let actualIC = qPoint.IC;
 
-  // Q-point Circle
+  if (snapToLoadLine) {
+    // Snap IC onto load line: IC = IcSat * (1 - VCE / VceCutoff)
+    actualIC = IcSat * (1 - actualVCE / VceCutoff);
+  }
+
+  // Convert IC from mA to μA for plotting
+  actualIC = actualIC * 1000;
+
+  // Clamp values inside axis limits
+  actualIC = Math.max(0, Math.min(actualIC, maxIC));
+  actualVCE = Math.max(0, Math.min(actualVCE, maxVCE));
+
+  // Convert Q-point to canvas coordinates
+  const qX = margin + plotWidth * (actualVCE / maxVCE);
+  const qY = margin + plotHeight * (1 - actualIC / maxIC);
+
+  // Draw Q-point
   ctx.fillStyle = '#ff4444';
   ctx.beginPath();
   ctx.arc(qX, qY, 6, 0, 2 * Math.PI);
   ctx.fill();
 
-  // Q-point Border
   ctx.strokeStyle = '#cc0000';
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Q-point Crosshairs
+  // Draw crosshairs for Q-point
   ctx.strokeStyle = '#ff4444';
   ctx.lineWidth = 1;
   ctx.setLineDash([5, 5]);
@@ -138,7 +159,7 @@ function drawLoadLine(canvas, IcSat, VceCutoff, qPoint) {
   ctx.stroke();
   ctx.setLineDash([]);
 
-  // Axis Labels
+  // Axis labels
   ctx.fillStyle = '#333';
   ctx.font = '14px Arial';
   ctx.textAlign = 'center';
@@ -146,21 +167,21 @@ function drawLoadLine(canvas, IcSat, VceCutoff, qPoint) {
   ctx.save();
   ctx.translate(15, height / 2);
   ctx.rotate(-Math.PI / 2);
-  ctx.fillText('IC (mA)', 0, 0);
+  ctx.fillText('IC (μA)', 0, 0);
   ctx.restore();
 
-  // Axis scale labels
+  // Numeric axis labels in μA for IC
   ctx.font = '12px Arial';
   ctx.textAlign = 'center';
   for (let i = 0; i <= 10; i++) {
-    const vce = (i * maxVCE / 10);
-    const ic = (i * maxIC / 10);
+    const vceVal = (i * maxVCE / 10);
+    const icVal = (i * maxIC / 10);
     const x = margin + (i * plotWidth / 10);
     const y = margin + plotHeight * (1 - i / 10);
 
     if (i % 2 === 0) {
-      ctx.fillText(vce.toFixed(1), x, height - margin + 20); // x-axis
-      ctx.fillText(ic.toFixed(1), margin - 25, y + 5); // y-axis
+      ctx.fillText(vceVal.toFixed(1), x, height - margin + 20);
+      ctx.fillText(icVal.toFixed(0), margin - 30, y + 5);
     }
   }
 
@@ -177,11 +198,11 @@ function drawLoadLine(canvas, IcSat, VceCutoff, qPoint) {
   ctx.fillStyle = '#ff4444';
   ctx.fillText('● Q-Point', width - 150, 70);
 
-  // Q-point coordinate label
+  // Q-point info
   ctx.fillStyle = '#333';
-  ctx.font = '12px Arial';
-  ctx.fillText(`Q-Point: (${qPoint.VCE.toFixed(2)}V, ${qPoint.IC.toFixed(2)}mA)`, width - 200, height - 20);
+  ctx.fillText(`Q-Point: (${actualVCE.toFixed(2)}V, ${(actualIC).toFixed(0)}μA)`, width - 200, height - 20);
 }
+
 
 // ===== ENHANCED BJT SOLVER CLASS =====
 class BJTSolver {
