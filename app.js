@@ -58,24 +58,23 @@ function drawLoadLine(canvas, IcSat, VceCutoff, qPoint) {
   const ctx = canvas.getContext('2d');
   const width = canvas.width;
   const height = canvas.height;
-  
-  // Clear canvas
-  ctx.clearRect(0, 0, width, height);
-  
-  // Set up coordinate system
+
   const margin = 60;
   const plotWidth = width - 2 * margin;
   const plotHeight = height - 2 * margin;
-  
-  // Calculate scales with 10% headroom
+
+  // Add 10% headroom
   const maxIC = IcSat * 1.1;
   const maxVCE = VceCutoff * 1.1;
-  
+
+  // Clear canvas
+  ctx.clearRect(0, 0, width, height);
+
   // Draw background
   ctx.fillStyle = '#f9f9f9';
   ctx.fillRect(margin, margin, plotWidth, plotHeight);
-  
-  // Draw grid
+
+  // Grid lines
   ctx.strokeStyle = '#e0e0e0';
   ctx.lineWidth = 1;
   for (let i = 1; i <= 10; i++) {
@@ -90,8 +89,8 @@ function drawLoadLine(canvas, IcSat, VceCutoff, qPoint) {
     ctx.lineTo(width - margin, y);
     ctx.stroke();
   }
-  
-  // Draw axes
+
+  // Axes
   ctx.strokeStyle = '#333';
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -99,37 +98,35 @@ function drawLoadLine(canvas, IcSat, VceCutoff, qPoint) {
   ctx.lineTo(margin, height - margin);
   ctx.lineTo(width - margin, height - margin);
   ctx.stroke();
-  
-  // Draw load line - FIXED COORDINATE SYSTEM
+
+  // Load line (from IcSat at VCE = 0 to VCECutoff at IC = 0)
   ctx.strokeStyle = '#2196F3';
   ctx.lineWidth = 3;
   ctx.beginPath();
-  // Load line from (0, IcSat) to (VceCutoff, 0)
-  const loadLineStartX = margin + plotWidth * (0 / maxVCE);
-  const loadLineStartY = height - margin - plotHeight * (IcSat / maxIC);
-  const loadLineEndX = margin + plotWidth * (VceCutoff / maxVCE);
-  const loadLineEndY = height - margin - plotHeight * (0 / maxIC);
-  
-  ctx.moveTo(loadLineStartX, loadLineStartY);
-  ctx.lineTo(loadLineEndX, loadLineEndY);
+  const x1 = margin;
+  const y1 = margin + plotHeight * (1 - IcSat / maxIC); // IC max
+  const x2 = margin + plotWidth * (VceCutoff / maxVCE); // VCE max
+  const y2 = margin + plotHeight; // IC = 0
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
   ctx.stroke();
-  
-  // Draw Q-point - FIXED COORDINATE SYSTEM
+
+  // === Q-Point Calculation ===
   const qX = margin + plotWidth * (qPoint.VCE / maxVCE);
-  const qY = height - margin - plotHeight * (qPoint.IC / maxIC);
-  
-  // Q-point circle
+  const qY = margin + plotHeight * (1 - qPoint.IC / maxIC); // Correct flip
+
+  // Q-point Circle
   ctx.fillStyle = '#ff4444';
   ctx.beginPath();
-  ctx.arc(qX, qY, 8, 0, 2 * Math.PI);
+  ctx.arc(qX, qY, 6, 0, 2 * Math.PI);
   ctx.fill();
-  
-  // Q-point border
+
+  // Q-point Border
   ctx.strokeStyle = '#cc0000';
   ctx.lineWidth = 2;
   ctx.stroke();
-  
-  // Q-point crosshairs
+
+  // Q-point Crosshairs
   ctx.strokeStyle = '#ff4444';
   ctx.lineWidth = 1;
   ctx.setLineDash([5, 5]);
@@ -140,8 +137,8 @@ function drawLoadLine(canvas, IcSat, VceCutoff, qPoint) {
   ctx.lineTo(width - margin, qY);
   ctx.stroke();
   ctx.setLineDash([]);
-  
-  // Add axis labels
+
+  // Axis Labels
   ctx.fillStyle = '#333';
   ctx.font = '14px Arial';
   ctx.textAlign = 'center';
@@ -151,41 +148,40 @@ function drawLoadLine(canvas, IcSat, VceCutoff, qPoint) {
   ctx.rotate(-Math.PI / 2);
   ctx.fillText('IC (mA)', 0, 0);
   ctx.restore();
-  
-  // Add scale labels
+
+  // Axis scale labels
   ctx.font = '12px Arial';
   ctx.textAlign = 'center';
   for (let i = 0; i <= 10; i++) {
     const vce = (i * maxVCE / 10);
     const ic = (i * maxIC / 10);
     const x = margin + (i * plotWidth / 10);
-    const y = height - margin - (i * plotHeight / 10);
-    
-    if (i % 2 === 0) { // Show every other label to avoid crowding
-      ctx.fillText(vce.toFixed(1), x, height - margin + 20);
-      ctx.fillText(ic.toFixed(1), margin - 25, y + 5);
+    const y = margin + plotHeight * (1 - i / 10);
+
+    if (i % 2 === 0) {
+      ctx.fillText(vce.toFixed(1), x, height - margin + 20); // x-axis
+      ctx.fillText(ic.toFixed(1), margin - 25, y + 5); // y-axis
     }
   }
-  
-  // Add title
+
+  // Title
   ctx.font = '16px Arial';
   ctx.textAlign = 'center';
   ctx.fillText('DC Load Line & Q-Point', width / 2, 25);
-  
-  // Add legend
+
+  // Legend
   ctx.font = '12px Arial';
   ctx.textAlign = 'left';
   ctx.fillStyle = '#2196F3';
   ctx.fillText('— Load Line', width - 150, 50);
   ctx.fillStyle = '#ff4444';
   ctx.fillText('● Q-Point', width - 150, 70);
-  
-  // Add Q-point coordinates
+
+  // Q-point coordinate label
   ctx.fillStyle = '#333';
   ctx.font = '12px Arial';
   ctx.fillText(`Q-Point: (${qPoint.VCE.toFixed(2)}V, ${qPoint.IC.toFixed(2)}mA)`, width - 200, height - 20);
 }
-
 
 // ===== ENHANCED BJT SOLVER CLASS =====
 class BJTSolver {
