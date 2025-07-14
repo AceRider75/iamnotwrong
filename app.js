@@ -69,8 +69,8 @@ function drawLoadLine(canvas, IcSat, VceCutoff, qPoint, snapToLoadLine = false) 
   const plotHeight = height - 2 * margin;
 
   // Convert currents from mA to μA for plotting
-  const maxIC = IcSat * 1000 * 1.1;       // μA scale with padding
-  const maxVCE = VceCutoff * 1.1;         // V scale with padding
+  const maxIC = IcSat * 1;       // μA scale with padding
+  const maxVCE = VceCutoff * 1;         // V scale with padding
 
   ctx.clearRect(0, 0, width, height);
 
