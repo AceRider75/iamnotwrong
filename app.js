@@ -69,7 +69,7 @@ function drawLoadLine(canvas, IcSat, VceCutoff, qPoint, snapToLoadLine = false) 
   const plotHeight = height - 2 * margin;
 
   // Convert currents from mA to μA for plotting
-  const maxIC = IcSat * 1;       // μA scale with padding
+  const maxIC = IcSat*1;       // μA scale with padding
   const maxVCE = VceCutoff * 1;         // V scale with padding
 
   ctx.clearRect(0, 0, width, height);
@@ -161,8 +161,8 @@ function drawLoadLine(canvas, IcSat, VceCutoff, qPoint, snapToLoadLine = false) 
 
   // Axis labels
   ctx.fillStyle = '#333';
-  ctx.font = '14px Arial';
-  ctx.textAlign = 'center';
+  ctx.font = '10px Arial';
+  ctx.textAlign = 'right';
   ctx.fillText('VCE (V)', width / 2, height - 15);
   ctx.save();
   ctx.translate(15, height / 2);
@@ -175,13 +175,14 @@ function drawLoadLine(canvas, IcSat, VceCutoff, qPoint, snapToLoadLine = false) 
   ctx.textAlign = 'center';
   for (let i = 0; i <= 10; i++) {
     const vceVal = (i * maxVCE / 10);
-    const icVal = (i * maxIC / 10);
+    const icVal = (i * maxIC );
     const x = margin + (i * plotWidth / 10);
     const y = margin + plotHeight * (1 - i / 10);
 
     if (i % 2 === 0) {
       ctx.fillText(vceVal.toFixed(1), x, height - margin + 20);
-      ctx.fillText(icVal.toFixed(0), margin - 30, y + 5);
+      ctx.fillText((icVal / 10000).toFixed(2), margin - 30, y + 5);
+
     }
   }
 
@@ -200,8 +201,9 @@ function drawLoadLine(canvas, IcSat, VceCutoff, qPoint, snapToLoadLine = false) 
 
   // Q-point info
   ctx.fillStyle = '#333';
-  ctx.fillText(`Q-Point: (${actualVCE.toFixed(2)}V, ${(actualIC/1000).toFixed(0)}mA)`, width - 200, height - 20);
+  ctx.fillText(`Q-Point: (${actualVCE.toFixed(2)}V, ${(actualIC/1000).toFixed(2)}mA)`, width - 150, 90);
 }
+
 
 
 // ===== ENHANCED BJT SOLVER CLASS =====
