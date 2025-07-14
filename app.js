@@ -167,7 +167,7 @@ function drawLoadLine(canvas, IcSat, VceCutoff, qPoint, snapToLoadLine = false) 
   ctx.save();
   ctx.translate(15, height / 2);
   ctx.rotate(-Math.PI / 2);
-  ctx.fillText('IC (μA)', 0, 0);
+  ctx.fillText('IC (mA)', 0, 0);
   ctx.restore();
 
   // Numeric axis labels in μA for IC
@@ -200,7 +200,7 @@ function drawLoadLine(canvas, IcSat, VceCutoff, qPoint, snapToLoadLine = false) 
 
   // Q-point info
   ctx.fillStyle = '#333';
-  ctx.fillText(`Q-Point: (${actualVCE.toFixed(2)}V, ${(actualIC).toFixed(0)}μA)`, width - 200, height - 20);
+  ctx.fillText(`Q-Point: (${actualVCE.toFixed(2)}V, ${(actualIC/1000).toFixed(0)}mA)`, width - 200, height - 20);
 }
 
 
