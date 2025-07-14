@@ -186,440 +186,963 @@ function drawLoadLine(canvas, IcSat, VceCutoff, qPoint) {
 }
 
 // ===== ENHANCED BJT SOLVER CLASS =====
-class BJTSolver {
-  static biasTypes = {
-    'base': 'Base Bias',
-    'voltage-divider': 'Voltage Divider Bias',
-    'collector-feedback': 'Collector Feedback Bias',
-    'emitter-bias': 'Emitter Bias (Single Supply)',
-    'dual-supply': 'Dual Supply Emitter Bias'
+class SchematicRenderer {
+  static renderBJTSchematic(containerId, type = 'voltageDivider') {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const existingSvg = container.querySelector('svg');
+    if (existingSvg) existingSvg.remove();
+
+    const width = 400;
+    const height = 300;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', width);
+    svg.setAttribute('height', height);
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    svg.style.maxWidth = '100%';
+    svg.style.height = 'auto';
+    svg.style.border = '1px solid var(--color-border)';
+    svg.style.borderRadius = 'var(--radius-base)';
+    svg.style.background = 'white';
+
+    // Background
+    const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bg.setAttribute('width', width);
+    bg.setAttribute('height', height);
+    bg.setAttribute('fill', 'white');
+    svg.appendChild(bg);
+
+    // Create circuit based on type
+    switch (type) {
+      case 'voltageDivider':
+        this.drawVoltageDividerBias(svg, width, height);
+        break;
+      case 'baseResistor':
+        this.drawBaseResistorBias(svg, width, height);
+        break;
+      case 'collectorFeedback':
+        this.drawCollectorFeedbackBias(svg, width, height);
+        break;
+      case 'emitterBias':
+        this.drawEmitterBias(svg, width, height);
+        break;
+      default:
+        this.drawVoltageDividerBias(svg, width, height);
+    }
+
+    container.appendChild(svg);
+  }
+
+  static drawVoltageDividerBias(svg, width, height) {
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    svg.appendChild(g);
+
+    // BJT symbol (NPN)
+    const bjtX = width / 2;
+    const bjtY = height / 2;
+    
+    // Base line
+    const baseLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    baseLine.setAttribute('x1', bjtX - 30);
+    baseLine.setAttribute('y1', bjtY);
+    baseLine.setAttribute('x2', bjtX - 10);
+    baseLine.setAttribute('y2', bjtY);
+    baseLine.setAttribute('stroke', '#333');
+    baseLine.setAttribute('stroke-width', '2');
+    g.appendChild(baseLine);
+
+    // Vertical line (base terminal)
+    const baseTerminal = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    baseTerminal.setAttribute('x1', bjtX - 10);
+    baseTerminal.setAttribute('y1', bjtY - 20);
+    baseTerminal.setAttribute('x2', bjtX - 10);
+    baseTerminal.setAttribute('y2', bjtY + 20);
+    baseTerminal.setAttribute('stroke', '#333');
+    baseTerminal.setAttribute('stroke-width', '3');
+    g.appendChild(baseTerminal);
+
+    // Collector line
+    const collectorLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    collectorLine.setAttribute('x1', bjtX - 10);
+    collectorLine.setAttribute('y1', bjtY - 20);
+    collectorLine.setAttribute('x2', bjtX + 15);
+    collectorLine.setAttribute('y2', bjtY - 35);
+    collectorLine.setAttribute('stroke', '#333');
+    collectorLine.setAttribute('stroke-width', '2');
+    g.appendChild(collectorLine);
+
+    // Emitter line
+    const emitterLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    emitterLine.setAttribute('x1', bjtX - 10);
+    emitterLine.setAttribute('y1', bjtY + 20);
+    emitterLine.setAttribute('x2', bjtX + 15);
+    emitterLine.setAttribute('y2', bjtY + 35);
+    emitterLine.setAttribute('stroke', '#333');
+    emitterLine.setAttribute('stroke-width', '2');
+    g.appendChild(emitterLine);
+
+    // Arrow for NPN
+    const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    arrow.setAttribute('points', `${bjtX + 10},${bjtY + 30} ${bjtX + 15},${bjtY + 35} ${bjtX + 5},${bjtY + 35}`);
+    arrow.setAttribute('fill', '#333');
+    g.appendChild(arrow);
+
+    // VCC supply line
+    const vccLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    vccLine.setAttribute('x1', bjtX + 15);
+    vccLine.setAttribute('y1', 30);
+    vccLine.setAttribute('x2', bjtX + 15);
+    vccLine.setAttribute('y2', bjtY - 35);
+    vccLine.setAttribute('stroke', '#333');
+    vccLine.setAttribute('stroke-width', '2');
+    g.appendChild(vccLine);
+
+    // RC resistor
+    this.drawResistor(g, bjtX + 15, 30, bjtX + 15, 80, 'RC');
+
+    // R1 resistor (voltage divider top)
+    this.drawResistor(g, bjtX - 80, 30, bjtX - 80, 80, 'R1');
+
+    // R2 resistor (voltage divider bottom)
+    this.drawResistor(g, bjtX - 80, 120, bjtX - 80, 170, 'R2');
+
+    // RE resistor
+    this.drawResistor(g, bjtX + 15, bjtY + 35, bjtX + 15, height - 50, 'RE');
+
+    // Connection lines
+    const connections = [
+      // R1 to R2 junction to base
+      { x1: bjtX - 80, y1: 120, x2: bjtX - 30, y2: 120 },
+      { x1: bjtX - 30, y1: 120, x2: bjtX - 30, y2: bjtY },
+      // VCC connections
+      { x1: bjtX - 80, y1: 30, x2: bjtX + 15, y2: 30 },
+      // Ground connections
+      { x1: bjtX - 80, y1: 170, x2: bjtX + 15, y2: 170 },
+      { x1: bjtX + 15, y1: height - 50, x2: bjtX + 15, y2: 170 }
+    ];
+
+    connections.forEach(conn => {
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', conn.x1);
+      line.setAttribute('y1', conn.y1);
+      line.setAttribute('x2', conn.x2);
+      line.setAttribute('y2', conn.y2);
+      line.setAttribute('stroke', '#333');
+      line.setAttribute('stroke-width', '2');
+      g.appendChild(line);
+    });
+
+    // Labels
+    this.addLabel(g, bjtX - 30, bjtY - 10, 'B', '#333');
+    this.addLabel(g, bjtX + 25, bjtY - 45, 'C', '#333');
+    this.addLabel(g, bjtX + 25, bjtY + 45, 'E', '#333');
+    this.addLabel(g, bjtX + 25, 15, 'VCC', '#333');
+    this.addLabel(g, bjtX + 25, height - 30, 'GND', '#333');
+
+    // Ground symbols
+    this.drawGround(g, bjtX - 80, 170);
+    this.drawGround(g, bjtX + 15, 170);
+
+    // VCC symbol
+    this.drawVccSymbol(g, bjtX + 15, 30);
+  }
+
+  static drawBaseResistorBias(svg, width, height) {
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    svg.appendChild(g);
+
+    const bjtX = width / 2;
+    const bjtY = height / 2;
+    
+    // Similar BJT drawing as above
+    this.drawNPNTransistor(g, bjtX, bjtY);
+    
+    // RB resistor (base resistor)
+    this.drawResistor(g, bjtX - 80, 30, bjtX - 80, bjtY, 'RB');
+    
+    // RC resistor
+    this.drawResistor(g, bjtX + 15, 30, bjtX + 15, 80, 'RC');
+    
+    // RE resistor
+    this.drawResistor(g, bjtX + 15, bjtY + 35, bjtX + 15, height - 50, 'RE');
+
+    // Connection lines
+    const connections = [
+      // RB to base
+      { x1: bjtX - 80, y1: bjtY, x2: bjtX - 30, y2: bjtY },
+      // VCC connections
+      { x1: bjtX - 80, y1: 30, x2: bjtX + 15, y2: 30 },
+      // Ground connection
+      { x1: bjtX + 15, y1: height - 50, x2: bjtX + 15, y2: height - 30 }
+    ];
+
+    connections.forEach(conn => {
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', conn.x1);
+      line.setAttribute('y1', conn.y1);
+      line.setAttribute('x2', conn.x2);
+      line.setAttribute('y2', conn.y2);
+      line.setAttribute('stroke', '#333');
+      line.setAttribute('stroke-width', '2');
+      g.appendChild(line);
+    });
+
+    // Labels and symbols
+    this.addLabel(g, bjtX - 30, bjtY - 10, 'B', '#333');
+    this.addLabel(g, bjtX + 25, bjtY - 45, 'C', '#333');
+    this.addLabel(g, bjtX + 25, bjtY + 45, 'E', '#333');
+    this.addLabel(g, bjtX + 25, 15, 'VCC', '#333');
+    
+    this.drawGround(g, bjtX + 15, height - 30);
+    this.drawVccSymbol(g, bjtX + 15, 30);
+  }
+
+  static drawCollectorFeedbackBias(svg, width, height) {
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    svg.appendChild(g);
+
+    const bjtX = width / 2;
+    const bjtY = height / 2;
+    
+    this.drawNPNTransistor(g, bjtX, bjtY);
+    
+    // RB resistor (feedback from collector to base)
+    this.drawResistor(g, bjtX - 50, bjtY - 60, bjtX - 50, bjtY - 10, 'RB');
+    
+    // RC resistor
+    this.drawResistor(g, bjtX + 15, 30, bjtX + 15, 80, 'RC');
+
+    // Feedback connection
+    const feedbackLine1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    feedbackLine1.setAttribute('x1', bjtX + 15);
+    feedbackLine1.setAttribute('y1', bjtY - 35);
+    feedbackLine1.setAttribute('x2', bjtX - 50);
+    feedbackLine1.setAttribute('y2', bjtY - 35);
+    feedbackLine1.setAttribute('stroke', '#333');
+    feedbackLine1.setAttribute('stroke-width', '2');
+    g.appendChild(feedbackLine1);
+
+    const feedbackLine2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    feedbackLine2.setAttribute('x1', bjtX - 50);
+    feedbackLine2.setAttribute('y1', bjtY - 35);
+    feedbackLine2.setAttribute('x2', bjtX - 50);
+    feedbackLine2.setAttribute('y2', bjtY - 60);
+    feedbackLine2.setAttribute('stroke', '#333');
+    feedbackLine2.setAttribute('stroke-width', '2');
+    g.appendChild(feedbackLine2);
+
+    const feedbackLine3 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    feedbackLine3.setAttribute('x1', bjtX - 50);
+    feedbackLine3.setAttribute('y1', bjtY - 10);
+    feedbackLine3.setAttribute('x2', bjtX - 30);
+    feedbackLine3.setAttribute('y2', bjtY);
+    feedbackLine3.setAttribute('stroke', '#333');
+    feedbackLine3.setAttribute('stroke-width', '2');
+    g.appendChild(feedbackLine3);
+
+    // VCC and ground connections
+    const vccLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    vccLine.setAttribute('x1', bjtX + 15);
+    vccLine.setAttribute('y1', 30);
+    vccLine.setAttribute('x2', bjtX + 15);
+    vccLine.setAttribute('y2', bjtY - 35);
+    vccLine.setAttribute('stroke', '#333');
+    vccLine.setAttribute('stroke-width', '2');
+    g.appendChild(vccLine);
+
+    const groundLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    groundLine.setAttribute('x1', bjtX + 15);
+    groundLine.setAttribute('y1', bjtY + 35);
+    groundLine.setAttribute('x2', bjtX + 15);
+    groundLine.setAttribute('y2', height - 30);
+    groundLine.setAttribute('stroke', '#333');
+    groundLine.setAttribute('stroke-width', '2');
+    g.appendChild(groundLine);
+
+    // Labels and symbols
+    this.addLabel(g, bjtX + 25, 15, 'VCC', '#333');
+    this.drawGround(g, bjtX + 15, height - 30);
+    this.drawVccSymbol(g, bjtX + 15, 30);
+  }
+
+  static drawEmitterBias(svg, width, height) {
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    svg.appendChild(g);
+
+    const bjtX = width / 2;
+    const bjtY = height / 2;
+    
+    this.drawNPNTransistor(g, bjtX, bjtY);
+    
+    // RC resistor
+    this.drawResistor(g, bjtX + 15, 30, bjtX + 15, 80, 'RC');
+    
+    // RE resistor
+    this.drawResistor(g, bjtX + 15, bjtY + 35, bjtX + 15, height - 70, 'RE');
+
+    // Base to ground (direct connection)
+    const baseLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    baseLine.setAttribute('x1', bjtX - 30);
+    baseLine.setAttribute('y1', bjtY);
+    baseLine.setAttribute('x2', bjtX - 80);
+    baseLine.setAttribute('y2', bjtY);
+    baseLine.setAttribute('stroke', '#333');
+    baseLine.setAttribute('stroke-width', '2');
+    g.appendChild(baseLine);
+
+    const baseGround = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    baseGround.setAttribute('x1', bjtX - 80);
+    baseGround.setAttribute('y1', bjtY);
+    baseGround.setAttribute('x2', bjtX - 80);
+    baseGround.setAttribute('y2', height - 30);
+    baseGround.setAttribute('stroke', '#333');
+    baseGround.setAttribute('stroke-width', '2');
+    g.appendChild(baseGround);
+
+    // VCC and connections
+    const vccLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    vccLine.setAttribute('x1', bjtX + 15);
+    vccLine.setAttribute('y1', 30);
+    vccLine.setAttribute('x2', bjtX + 15);
+    vccLine.setAttribute('y2', bjtY - 35);
+    vccLine.setAttribute('stroke', '#333');
+    vccLine.setAttribute('stroke-width', '2');
+    g.appendChild(vccLine);
+
+    // Emitter to negative supply
+    const emitterSupply = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    emitterSupply.setAttribute('x1', bjtX + 15);
+    emitterSupply.setAttribute('y1', height - 70);
+    emitterSupply.setAttribute('x2', bjtX + 15);
+    emitterSupply.setAttribute('y2', height - 30);
+    emitterSupply.setAttribute('stroke', '#333');
+    emitterSupply.setAttribute('stroke-width', '2');
+    g.appendChild(emitterSupply);
+
+    // Labels and symbols
+    this.addLabel(g, bjtX + 25, 15, 'VCC', '#333');
+    this.addLabel(g, bjtX + 25, height - 15, '-VEE', '#333');
+    this.drawGround(g, bjtX - 80, height - 30);
+    this.drawVccSymbol(g, bjtX + 15, 30);
+  }
+
+  static drawNPNTransistor(g, x, y) {
+    // Base line
+    const baseLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    baseLine.setAttribute('x1', x - 30);
+    baseLine.setAttribute('y1', y);
+    baseLine.setAttribute('x2', x - 10);
+    baseLine.setAttribute('y2', y);
+    baseLine.setAttribute('stroke', '#333');
+    baseLine.setAttribute('stroke-width', '2');
+    g.appendChild(baseLine);
+
+    // Vertical line (base terminal)
+    const baseTerminal = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    baseTerminal.setAttribute('x1', x - 10);
+    baseTerminal.setAttribute('y1', y - 20);
+    baseTerminal.setAttribute('x2', x - 10);
+    baseTerminal.setAttribute('y2', y + 20);
+    baseTerminal.setAttribute('stroke', '#333');
+    baseTerminal.setAttribute('stroke-width', '3');
+    g.appendChild(baseTerminal);
+
+    // Collector line
+    const collectorLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    collectorLine.setAttribute('x1', x - 10);
+    collectorLine.setAttribute('y1', y - 20);
+    collectorLine.setAttribute('x2', x + 15);
+    collectorLine.setAttribute('y2', y - 35);
+    collectorLine.setAttribute('stroke', '#333');
+    collectorLine.setAttribute('stroke-width', '2');
+    g.appendChild(collectorLine);
+
+    // Emitter line
+    const emitterLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    emitterLine.setAttribute('x1', x - 10);
+    emitterLine.setAttribute('y1', y + 20);
+    emitterLine.setAttribute('x2', x + 15);
+    emitterLine.setAttribute('y2', y + 35);
+    emitterLine.setAttribute('stroke', '#333');
+    emitterLine.setAttribute('stroke-width', '2');
+    g.appendChild(emitterLine);
+
+    // Arrow for NPN
+    const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    arrow.setAttribute('points', `${x + 10},${y + 30} ${x + 15},${y + 35} ${x + 5},${y + 35}`);
+    arrow.setAttribute('fill', '#333');
+    g.appendChild(arrow);
+  }
+
+  static drawResistor(g, x1, y1, x2, y2, label) {
+    const length = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+    
+    // Create resistor zigzag pattern
+    const zigzag = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const zigzagLength = 40;
+    const startX = x1 + (length - zigzagLength) / 2 * Math.cos(angle);
+    const startY = y1 + (length - zigzagLength) / 2 * Math.sin(angle);
+    
+    let pathData = `M ${x1} ${y1} L ${startX} ${startY} `;
+    
+    // Create zigzag
+    for (let i = 0; i < 6; i++) {
+      const segmentLength = zigzagLength / 6;
+      const segmentX = startX + i * segmentLength * Math.cos(angle);
+      const segmentY = startY + i * segmentLength * Math.sin(angle);
+      const offset = (i % 2 === 0) ? 8 : -8;
+      const offsetX = segmentX + offset * Math.cos(angle + Math.PI / 2);
+      const offsetY = segmentY + offset * Math.sin(angle + Math.PI / 2);
+      pathData += `L ${offsetX} ${offsetY} `;
+    }
+    
+    const endX = startX + zigzagLength * Math.cos(angle);
+    const endY = startY + zigzagLength * Math.sin(angle);
+    pathData += `L ${endX} ${endY} L ${x2} ${y2}`;
+    
+    zigzag.setAttribute('d', pathData);
+    zigzag.setAttribute('stroke', '#333');
+    zigzag.setAttribute('stroke-width', '2');
+    zigzag.setAttribute('fill', 'none');
+    g.appendChild(zigzag);
+    
+    // Add label
+    const midX = (x1 + x2) / 2;
+    const midY = (y1 + y2) / 2;
+    this.addLabel(g, midX + 15, midY - 5, label, '#333');
+  }
+
+  static drawGround(g, x, y) {
+    // Ground symbol
+    const lines = [
+      { x1: x, y1: y, x2: x, y2: y + 15 },
+      { x1: x - 15, y1: y + 15, x2: x + 15, y2: y + 15 },
+      { x1: x - 10, y1: y + 20, x2: x + 10, y2: y + 20 },
+      { x1: x - 5, y1: y + 25, x2: x + 5, y2: y + 25 }
+    ];
+    
+    lines.forEach(line => {
+      const groundLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      groundLine.setAttribute('x1', line.x1);
+      groundLine.setAttribute('y1', line.y1);
+      groundLine.setAttribute('x2', line.x2);
+      groundLine.setAttribute('y2', line.y2);
+      groundLine.setAttribute('stroke', '#333');
+      groundLine.setAttribute('stroke-width', '2');
+      g.appendChild(groundLine);
+    });
+  }
+
+  static drawVccSymbol(g, x, y) {
+    // VCC symbol (circle with + sign)
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', x);
+    circle.setAttribute('cy', y - 15);
+    circle.setAttribute('r', '8');
+    circle.setAttribute('stroke', '#333');
+    circle.setAttribute('stroke-width', '2');
+    circle.setAttribute('fill', 'white');
+    g.appendChild(circle);
+    
+    // Plus sign
+    const plus1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    plus1.setAttribute('x1', x - 4);
+    plus1.setAttribute('y1', y - 15);
+    plus1.setAttribute('x2', x + 4);
+    plus1.setAttribute('y2', y - 15);
+    plus1.setAttribute('stroke', '#333');
+    plus1.setAttribute('stroke-width', '2');
+    g.appendChild(plus1);
+    
+    const plus2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    plus2.setAttribute('x1', x);
+    plus2.setAttribute('y1', y - 19);
+    plus2.setAttribute('x2', x);
+    plus2.setAttribute('y2', y - 11);
+    plus2.setAttribute('stroke', '#333');
+    plus2.setAttribute('stroke-width', '2');
+    g.appendChild(plus2);
+  }
+
+  static addLabel(g, x, y, text, color) {
+    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    label.textContent = text;
+    label.setAttribute('x', x);
+    label.setAttribute('y', y);
+    label.setAttribute('fill', color);
+    label.setAttribute('font-size', '12');
+    label.setAttribute('font-weight', 'bold');
+    label.setAttribute('text-anchor', 'middle');
+    g.appendChild(label);
+  }
+
+  static renderOpAmpSchematic(containerId, type = 'inverting') {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const existingSvg = container.querySelector('svg');
+    if (existingSvg) existingSvg.remove();
+
+    const width = 400;
+    const height = 250;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', width);
+    svg.setAttribute('height', height);
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    svg.style.maxWidth = '100%';
+    svg.style.height = 'auto';
+    svg.style.border = '1px solid var(--color-border)';
+    svg.style.borderRadius = 'var(--radius-base)';
+    svg.style.background = 'white';
+
+    const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bg.setAttribute('width', width);
+    bg.setAttribute('height', height);
+    bg.setAttribute('fill', 'white');
+    svg.appendChild(bg);
+
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    svg.appendChild(g);
+
+    // Draw op-amp triangle
+    const opAmpX = width / 2;
+    const opAmpY = height / 2;
+    const triangle = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    triangle.setAttribute('points', `${opAmpX - 40},${opAmpY - 30} ${opAmpX - 40},${opAmpY + 30} ${opAmpX + 40},${opAmpY}`);
+    triangle.setAttribute('stroke', '#333');
+    triangle.setAttribute('stroke-width', '3');
+    triangle.setAttribute('fill', 'white');
+    g.appendChild(triangle);
+
+    // Input symbols
+    this.addLabel(g, opAmpX - 25, opAmpY - 15, '−', '#333');
+    this.addLabel(g, opAmpX - 25, opAmpY + 20, '+', '#333');
+
+    // Input and output lines
+    const inputLines = [
+      { x1: opAmpX - 80, y1: opAmpY - 18, x2: opAmpX - 40, y2: opAmpY - 18 },
+      { x1: opAmpX - 80, y1: opAmpY + 18, x2: opAmpX - 40, y2: opAmpY + 18 },
+      { x1: opAmpX + 40, y1: opAmpY, x2: opAmpX + 80, y2: opAmpY }
+    ];
+
+    inputLines.forEach(line => {
+      const inputLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      inputLine.setAttribute('x1', line.x1);
+      inputLine.setAttribute('y1', line.y1);
+      inputLine.setAttribute('x2', line.x2);
+      inputLine.setAttribute('y2', line.y2);
+      inputLine.setAttribute('stroke', '#333');
+      inputLine.setAttribute('stroke-width', '2');
+      g.appendChild(inputLine);
+    });
+
+    if (type === 'inverting') {
+      // Feedback resistor
+      this.drawResistor(g, opAmpX - 80, opAmpY - 18, opAmpX - 80, opAmpY - 60, 'Rin');
+      this.drawResistor(g, opAmpX - 80, opAmpY - 60, opAmpX + 80, opAmpY - 60, 'Rf');
+      
+      // Feedback line
+      const feedbackLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      feedbackLine.setAttribute('x1', opAmpX + 80);
+      feedbackLine.setAttribute('y1', opAmpY);
+      feedbackLine.setAttribute('x2', opAmpX + 80);
+      feedbackLine.setAttribute('y2', opAmpY - 60);
+      feedbackLine.setAttribute('stroke', '#333');
+      feedbackLine.setAttribute('stroke-width', '2');
+      g.appendChild(feedbackLine);
+
+      // Ground connection for non-inverting input
+      const groundLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      groundLine.setAttribute('x1', opAmpX - 80);
+      groundLine.setAttribute('y1', opAmpY + 18);
+      groundLine.setAttribute('x2', opAmpX - 80);
+      groundLine.setAttribute('y2', opAmpY + 50);
+      groundLine.setAttribute('stroke', '#333');
+      groundLine.setAttribute('stroke-width', '2');
+      g.appendChild(groundLine);
+
+      this.drawGround(g, opAmpX - 80, opAmpY + 50);
+    }
+
+    // Labels
+    this.addLabel(g, opAmpX - 120, opAmpY - 18, 'Vin', '#333');
+    this.addLabel(g, opAmpX + 120, opAmpY, 'Vout', '#333');
+
+    container.appendChild(svg);
+  }
+}
+
+/* ======== BJT SOLVER ======== */
+const BjtSolver = (() => {
+  const biasTypes = {
+    voltageDivider: 'Voltage Divider',
+    baseResistor: 'Base Resistor',
+    collectorFeedback: 'Collector Feedback',
+    emitterBias: 'Emitter Bias'
   };
 
-  static getInputSchema(biasType) {
-    const schemas = {
-      'base': [
-        { name: 'VCC', label: 'Supply Voltage (VCC)', unit: 'V', default: 12 },
-        { name: 'RB', label: 'Base Resistor (RB)', unit: 'kΩ', default: 470 },
-        { name: 'RC', label: 'Collector Resistor (RC)', unit: 'kΩ', default: 2.2 },
-        { name: 'RE', label: 'Emitter Resistor (RE)', unit: 'kΩ', default: 1.0 },
-        { name: 'beta', label: 'Current Gain (β)', unit: '', default: 100 },
-        { name: 'VBE', label: 'Base-Emitter Voltage (VBE)', unit: 'V', default: 0.7 }
-      ],
-      'voltage-divider': [
-        { name: 'VCC', label: 'Supply Voltage (VCC)', unit: 'V', default: 12 },
-        { name: 'R1', label: 'Upper Divider Resistor (R1)', unit: 'kΩ', default: 10 },
-        { name: 'R2', label: 'Lower Divider Resistor (R2)', unit: 'kΩ', default: 2.2 },
-        { name: 'RC', label: 'Collector Resistor (RC)', unit: 'kΩ', default: 2.2 },
-        { name: 'RE', label: 'Emitter Resistor (RE)', unit: 'kΩ', default: 1.0 },
-        { name: 'beta', label: 'Current Gain (β)', unit: '', default: 100 },
-        { name: 'VBE', label: 'Base-Emitter Voltage (VBE)', unit: 'V', default: 0.7 }
-      ],
-      'collector-feedback': [
-        { name: 'VCC', label: 'Supply Voltage (VCC)', unit: 'V', default: 12 },
-        { name: 'RC', label: 'Collector Resistor (RC)', unit: 'kΩ', default: 2.2 },
-        { name: 'RB', label: 'Base Resistor (RB)', unit: 'kΩ', default: 100 },
-        { name: 'beta', label: 'Current Gain (β)', unit: '', default: 100 },
-        { name: 'VBE', label: 'Base-Emitter Voltage (VBE)', unit: 'V', default: 0.7 }
-      ],
-      'emitter-bias': [
-        { name: 'VCC', label: 'Supply Voltage (VCC)', unit: 'V', default: 12 },
-        { name: 'RC', label: 'Collector Resistor (RC)', unit: 'kΩ', default: 2.2 },
-        { name: 'RE', label: 'Emitter Resistor (RE)', unit: 'kΩ', default: 1.0 },
-        { name: 'beta', label: 'Current Gain (β)', unit: '', default: 100 },
-        { name: 'VBE', label: 'Base-Emitter Voltage (VBE)', unit: 'V', default: 0.7 }
-      ],
-      'dual-supply': [
-        { name: 'VCC', label: 'Positive Supply (VCC)', unit: 'V', default: 12 },
-        { name: 'VEE', label: 'Negative Supply (VEE)', unit: 'V', default: -12 },
-        { name: 'RC', label: 'Collector Resistor (RC)', unit: 'kΩ', default: 2.2 },
-        { name: 'RE', label: 'Emitter Resistor (RE)', unit: 'kΩ', default: 1.0 },
-        { name: 'beta', label: 'Current Gain (β)', unit: '', default: 100 },
-        { name: 'VBE', label: 'Base-Emitter Voltage (VBE)', unit: 'V', default: 0.7 }
-      ]
-    };
-    return schemas[biasType] || [];
-  }
-
-  static getSVG(biasType) {
-    const schematics = {
-      'base': `<svg width="300" height="200" viewBox="0 0 300 200">
-        <line x1="50" y1="50" x2="150" y2="50" stroke="black" stroke-width="2"/>
-        <rect x="150" y="45" width="40" height="10" fill="none" stroke="black" stroke-width="2"/>
-        <text x="170" y="40" text-anchor="middle" font-size="12">RB</text>
-        <line x1="190" y1="50" x2="210" y2="50" stroke="black" stroke-width="2"/>
-        <circle cx="210" cy="50" r="3" fill="black"/>
-        <line x1="210" y1="50" x2="210" y2="80" stroke="black" stroke-width="2"/>
-        <line x1="200" y1="80" x2="220" y2="80" stroke="black" stroke-width="2"/>
-        <line x1="210" y1="80" x2="230" y2="60" stroke="black" stroke-width="2"/>
-        <line x1="210" y1="80" x2="230" y2="100" stroke="black" stroke-width="2"/>
-        <line x1="230" y1="60" x2="230" y2="30" stroke="black" stroke-width="2"/>
-        <line x1="230" y1="30" x2="280" y2="30" stroke="black" stroke-width="2"/>
-        <rect x="240" y="25" width="30" height="10" fill="none" stroke="black" stroke-width="2"/>
-        <text x="255" y="20" text-anchor="middle" font-size="12">RC</text>
-        <line x1="230" y1="100" x2="230" y2="130" stroke="black" stroke-width="2"/>
-        <rect x="220" y="130" width="20" height="10" fill="none" stroke="black" stroke-width="2"/>
-        <text x="230" y="155" text-anchor="middle" font-size="12">RE</text>
-        <line x1="230" y1="140" x2="230" y2="170" stroke="black" stroke-width="2"/>
-        <line x1="50" y1="30" x2="50" y2="170" stroke="black" stroke-width="2"/>
-        <line x1="280" y1="30" x2="280" y2="170" stroke="black" stroke-width="2"/>
-        <text x="40" y="100" text-anchor="middle" font-size="12">VCC</text>
-        <text x="50" y="185" text-anchor="middle" font-size="12">GND</text>
-      </svg>`,
-      'voltage-divider': `<svg width="300" height="250" viewBox="0 0 300 250">
-        <line x1="50" y1="50" x2="150" y2="50" stroke="black" stroke-width="2"/>
-        <rect x="150" y="45" width="40" height="10" fill="none" stroke="black" stroke-width="2"/>
-        <text x="170" y="40" text-anchor="middle" font-size="12">R1</text>
-        <line x1="190" y1="50" x2="210" y2="50" stroke="black" stroke-width="2"/>
-        <circle cx="210" cy="50" r="3" fill="black"/>
-        <line x1="210" y1="50" x2="210" y2="80" stroke="black" stroke-width="2"/>
-        <rect x="200" y="80" width="20" height="10" fill="none" stroke="black" stroke-width="2"/>
-        <text x="170" y="95" text-anchor="middle" font-size="12">R2</text>
-        <line x1="210" y1="90" x2="210" y2="120" stroke="black" stroke-width="2"/>
-        <circle cx="210" cy="120" r="3" fill="black"/>
-        <line x1="210" y1="120" x2="230" y2="120" stroke="black" stroke-width="2"/>
-        <line x1="220" y1="120" x2="240" y2="120" stroke="black" stroke-width="2"/>
-        <line x1="230" y1="120" x2="250" y2="100" stroke="black" stroke-width="2"/>
-        <line x1="230" y1="120" x2="250" y2="140" stroke="black" stroke-width="2"/>
-        <line x1="250" y1="100" x2="250" y2="70" stroke="black" stroke-width="2"/>
-        <line x1="250" y1="70" x2="300" y2="70" stroke="black" stroke-width="2"/>
-        <rect x="260" y="65" width="30" height="10" fill="none" stroke="black" stroke-width="2"/>
-        <text x="275" y="60" text-anchor="middle" font-size="12">RC</text>
-        <line x1="250" y1="140" x2="250" y2="170" stroke="black" stroke-width="2"/>
-        <rect x="240" y="170" width="20" height="10" fill="none" stroke="black" stroke-width="2"/>
-        <text x="250" y="195" text-anchor="middle" font-size="12">RE</text>
-        <line x1="250" y1="180" x2="250" y2="210" stroke="black" stroke-width="2"/>
-        <line x1="50" y1="50" x2="50" y2="210" stroke="black" stroke-width="2"/>
-        <line x1="300" y1="70" x2="300" y2="210" stroke="black" stroke-width="2"/>
-        <line x1="210" y1="120" x2="210" y2="210" stroke="black" stroke-width="2"/>
-        <line x1="250" y1="210" x2="250" y2="210" stroke="black" stroke-width="2"/>
-        <text x="40" y="130" text-anchor="middle" font-size="12">VCC</text>
-        <text x="50" y="225" text-anchor="middle" font-size="12">GND</text>
-      </svg>`,
-      'collector-feedback': `<svg width="300" height="200" viewBox="0 0 300 200">
-        <line x1="50" y1="50" x2="150" y2="50" stroke="black" stroke-width="2"/>
-        <rect x="150" y="45" width="40" height="10" fill="none" stroke="black" stroke-width="2"/>
-        <text x="170" y="40" text-anchor="middle" font-size="12">RC</text>
-        <line x1="190" y1="50" x2="210" y2="50" stroke="black" stroke-width="2"/>
-        <circle cx="210" cy="50" r="3" fill="black"/>
-        <line x1="210" y1="50" x2="210" y2="30" stroke="black" stroke-width="2"/>
-        <line x1="210" y1="30" x2="150" y2="30" stroke="black" stroke-width="2"/>
-        <line x1="150" y1="30" x2="150" y2="70" stroke="black" stroke-width="2"/>
-        <rect x="140" y="70" width="20" height="10" fill="none" stroke="black" stroke-width="2"/>
-        <text x="110" y="85" text-anchor="middle" font-size="12">RB</text>
-        <line x1="150" y1="80" x2="150" y2="100" stroke="black" stroke-width="2"/>
-        <line x1="150" y1="100" x2="170" y2="100" stroke="black" stroke-width="2"/>
-        <line x1="160" y1="100" x2="180" y2="100" stroke="black" stroke-width="2"/>
-        <line x1="170" y1="100" x2="190" y2="80" stroke="black" stroke-width="2"/>
-        <line x1="170" y1="100" x2="190" y2="120" stroke="black" stroke-width="2"/>
-        <line x1="190" y1="80" x2="190" y2="50" stroke="black" stroke-width="2"/>
-        <line x1="190" y1="120" x2="190" y2="150" stroke="black" stroke-width="2"/>
-        <line x1="50" y1="50" x2="50" y2="150" stroke="black" stroke-width="2"/>
-        <line x1="190" y1="150" x2="50" y2="150" stroke="black" stroke-width="2"/>
-        <text x="40" y="100" text-anchor="middle" font-size="12">VCC</text>
-        <text x="50" y="165" text-anchor="middle" font-size="12">GND</text>
-      </svg>`
-    };
-    return schematics[biasType] || '<svg width="300" height="200"><text x="150" y="100" text-anchor="middle">Schematic not available</text></svg>';
-  }
-
-  static solve(biasType, inputs) {
-    switch (biasType) {
-      case 'base':
-        return this.solveBaseBias(inputs);
-      case 'voltage-divider':
-        return this.solveVoltageDivider(inputs);
-      case 'collector-feedback':
-        return this.solveCollectorFeedback(inputs);
-      case 'emitter-bias':
-        return this.solveEmitterBias(inputs);
-      case 'dual-supply':
-        return this.solveDualSupply(inputs);
+  const schema = (type) => {
+    const common = [
+      { name: 'VCC', label: 'Supply Voltage VCC', unit: 'V', default: 12 },
+      { name: 'RC', label: 'Collector Resistor RC', unit: 'kΩ', default: 2.2 },
+      { name: 'Beta', label: 'β (hFE)', unit: '', default: 100 }
+    ];
+    
+    switch (type) {
+      case 'voltageDivider':
+        return [
+          ...common,
+          { name: 'R1', label: 'Divider R1', unit: 'kΩ', default: 10 },
+          { name: 'R2', label: 'Divider R2', unit: 'kΩ', default: 2.2 },
+          { name: 'RE', label: 'Emitter Resistor RE', unit: 'kΩ', default: 1 }
+        ];
+      case 'baseResistor':
+        return [
+          ...common,
+          { name: 'RB', label: 'Base Resistor RB', unit: 'kΩ', default: 470 },
+          { name: 'RE', label: 'Emitter Resistor RE', unit: 'kΩ', default: 1 }
+        ];
+      case 'collectorFeedback':
+        return [
+          ...common,
+          { name: 'RB', label: 'Base Resistor RB', unit: 'kΩ', default: 100 }
+        ];
+      case 'emitterBias':
+        return [
+          ...common,
+          { name: 'RE', label: 'Emitter Resistor RE', unit: 'kΩ', default: 1 }
+        ];
       default:
-        throw new Error(`Unsupported bias type: ${biasType}`);
+        return common;
+    }
+  };
+
+  const solveVoltageDivider = (inputs) => {
+    const { VCC, R1, R2, RC, RE, Beta } = inputs;
+    const VTH = VCC * (R2 / (R1 + R2));
+    const RTH = (R1 * R2) / (R1 + R2);
+    const IC = (VTH - 0.7) / (RE + RTH / Beta);
+    const VCE = VCC - IC * (RC + RE);
+    const IcSat = VCC / (RC + RE);
+
+    return {
+      results: {
+        IC: `${IC.toFixed(3)} mA`,
+        VCE: `${VCE.toFixed(2)} V`,
+        VTH: `${VTH.toFixed(2)} V`,
+        RTH: `${RTH.toFixed(2)} kΩ`
+      },
+      steps: [
+        `Calculate Thevenin voltage: VTH = VCC × R2/(R1+R2) = ${VCC} × ${R2}/(${R1}+${R2}) = ${VTH.toFixed(2)} V`,
+        `Calculate Thevenin resistance: RTH = R1||R2 = (${R1}×${R2})/(${R1}+${R2}) = ${RTH.toFixed(2)} kΩ`,
+        `Calculate collector current: IC = (VTH-0.7)/(RE+RTH/β) = (${VTH.toFixed(2)}-0.7)/(${RE}+${RTH.toFixed(2)}/${Beta}) = ${IC.toFixed(3)} mA`,
+        `Calculate collector-emitter voltage: VCE = VCC - IC×(RC+RE) = ${VCC} - ${IC.toFixed(3)}×(${RC}+${RE}) = ${VCE.toFixed(2)} V`,
+        `Operating point Q(${VCE.toFixed(2)} V, ${IC.toFixed(3)} mA) is in the active region`
+      ],
+      loadLine: {
+        IcSat: IcSat,
+        VceCutoff: VCC,
+        qPoint: { IC, VCE }
+      }
+    };
+  };
+
+  const solveBaseResistor = (inputs) => {
+    const { VCC, RB, RC, RE, Beta } = inputs;
+    const IB = (VCC - 0.7) / (RB * 1000);
+    const IC = Beta * IB * 1000;
+    const VCE = VCC - IC * (RC + RE);
+    const IcSat = VCC / (RC + RE);
+
+    return {
+      results: {
+        IB: `${(IB * 1000).toFixed(3)} mA`,
+        IC: `${IC.toFixed(3)} mA`,
+        VCE: `${VCE.toFixed(2)} V`
+      },
+      steps: [
+        `Calculate base current: IB = (VCC-0.7)/RB = (${VCC}-0.7)/${RB} = ${(IB * 1000).toFixed(3)} mA`,
+        `Calculate collector current: IC = β×IB = ${Beta}×${(IB * 1000).toFixed(3)} = ${IC.toFixed(3)} mA`,
+        `Calculate collector-emitter voltage: VCE = VCC - IC×(RC+RE) = ${VCC} - ${IC.toFixed(3)}×(${RC}+${RE}) = ${VCE.toFixed(2)} V`,
+        `Operating point Q(${VCE.toFixed(2)} V, ${IC.toFixed(3)} mA) is in the active region`
+      ],
+      loadLine: {
+        IcSat: IcSat,
+        VceCutoff: VCC,
+        qPoint: { IC, VCE }
+      }
+    };
+  };
+
+  const solve = (type, inputs) => {
+    switch (type) {
+      case 'voltageDivider':
+        return solveVoltageDivider(inputs);
+      case 'baseResistor':
+        return solveBaseResistor(inputs);
+      case 'collectorFeedback':
+        return solveVoltageDivider(inputs);
+      case 'emitterBias':
+        return solveVoltageDivider(inputs);
+      default:
+        return solveVoltageDivider(inputs);
+    }
+  };
+
+  return { biasTypes, schema, solve };
+})();
+
+/* ======== ENHANCED SVG RENDERER ======== */
+function renderBjtSvg(containerId, { IcSat, VceCutoff, qPoint }) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const existingSvg = container.querySelector('svg');
+  if (existingSvg) existingSvg.remove();
+
+  const width = 500;
+  const height = 350;
+  const margin = { top: 40, right: 40, bottom: 60, left: 80 };
+  const viewW = width - margin.left - margin.right;
+  const viewH = height - margin.top - margin.bottom;
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', width);
+  svg.setAttribute('height', height);
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.style.maxWidth = '100%';
+  svg.style.height = 'auto';
+  svg.style.border = '1px solid var(--color-border)';
+  svg.style.borderRadius = 'var(--radius-base)';
+  svg.style.background = 'white';
+
+  const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  bg.setAttribute('width', width);
+  bg.setAttribute('height', height);
+  bg.setAttribute('fill', 'white');
+  svg.appendChild(bg);
+
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  g.setAttribute('transform', `translate(${margin.left},${margin.top})`);
+  svg.appendChild(g);
+
+  const maxIC = Math.max(IcSat * 1.2, qPoint.IC * 1.5);
+  const maxVCE = Math.max(VceCutoff * 1.2, qPoint.VCE * 1.5);
+  const toX = vce => Math.max(0, Math.min(viewW, (vce / maxVCE) * viewW));
+  const toY = ic => Math.max(0, Math.min(viewH, viewH - (ic / maxIC) * viewH));
+
+  // Enhanced grid with better styling
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  const pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+  pattern.setAttribute('id', 'grid');
+  pattern.setAttribute('width', viewW / 10);
+  pattern.setAttribute('height', viewH / 10);
+  pattern.setAttribute('patternUnits', 'userSpaceOnUse');
+  
+  const gridRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  gridRect.setAttribute('width', viewW / 10);
+  gridRect.setAttribute('height', viewH / 10);
+  gridRect.setAttribute('fill', 'none');
+  gridRect.setAttribute('stroke', '#f0f0f0');
+  gridRect.setAttribute('stroke-width', '1');
+  pattern.appendChild(gridRect);
+  defs.appendChild(pattern);
+  svg.appendChild(defs);
+
+  const gridBackground = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  gridBackground.setAttribute('width', viewW);
+  gridBackground.setAttribute('height', viewH);
+  gridBackground.setAttribute('fill', 'url(#grid)');
+  g.appendChild(gridBackground);
+
+  // Enhanced axes with tick marks
+  const xAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  xAxis.setAttribute('x1', 0);
+  xAxis.setAttribute('y1', viewH);
+  xAxis.setAttribute('x2', viewW);
+  xAxis.setAttribute('y2', viewH);
+  xAxis.setAttribute('stroke', '#333');
+  xAxis.setAttribute('stroke-width', '2');
+  g.appendChild(xAxis);
+
+  const yAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  yAxis.setAttribute('x1', 0);
+  yAxis.setAttribute('y1', 0);
+  yAxis.setAttribute('x2', 0);
+  yAxis.setAttribute('y2', viewH);
+  yAxis.setAttribute('stroke', '#333');
+  yAxis.setAttribute('stroke-width', '2');
+  g.appendChild(yAxis);
+
+  // X-axis tick marks and labels
+  for (let i = 0; i <= 10; i++) {
+    const x = (i / 10) * viewW;
+    const vceValue = (i / 10) * maxVCE;
+    
+    const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    tick.setAttribute('x1', x);
+    tick.setAttribute('y1', viewH);
+    tick.setAttribute('x2', x);
+    tick.setAttribute('y2', viewH + 5);
+    tick.setAttribute('stroke', '#333');
+    tick.setAttribute('stroke-width', '1');
+    g.appendChild(tick);
+
+    if (i % 2 === 0) {
+      const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      label.textContent = vceValue.toFixed(1);
+      label.setAttribute('x', x);
+      label.setAttribute('y', viewH + 20);
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('fill', '#333');
+      label.setAttribute('font-size', '12');
+      g.appendChild(label);
     }
   }
 
-  static solveBaseBias(inputs) {
-    const { VCC, RB, RC, RE, beta, VBE } = inputs;
-    const RB_ohms = RB * 1000;
-    const RC_ohms = RC * 1000;
-    const RE_ohms = RE * 1000;
-    const steps = [];
+  // Y-axis tick marks and labels
+  for (let i = 0; i <= 10; i++) {
+    const y = (i / 10) * viewH;
+    const icValue = ((10 - i) / 10) * maxIC;
+    
+    const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    tick.setAttribute('x1', 0);
+    tick.setAttribute('y1', y);
+    tick.setAttribute('x2', -5);
+    tick.setAttribute('y2', y);
+    tick.setAttribute('stroke', '#333');
+    tick.setAttribute('stroke-width', '1');
+    g.appendChild(tick);
 
-    // Step 1: Calculate base current
-    const IB = (VCC - VBE) / RB_ohms;
-    steps.push({
-      title: 'Determine Base Current',
-      explanation: 'In base bias, the base current is determined by applying Kirchhoff\'s Voltage Law around the base-emitter loop. The base resistor RB limits the current flowing from VCC through the base-emitter junction.',
-      formula: 'IB = (VCC - VBE) / RB',
-      substitution: `IB = (${VCC} - ${VBE}) / ${RB_ohms}`,
-      result: `IB = ${formatValue(IB * 1000, 'mA')}`
-    });
-
-    // Step 2: Calculate collector current
-    const IC = beta * IB;
-    steps.push({
-      title: 'Calculate Collector Current',
-      explanation: 'The collector current is amplified by the transistor\'s current gain β. This fundamental relationship shows how a small base current controls a much larger collector current in the active region.',
-      formula: 'IC = β × IB',
-      substitution: `IC = ${beta} × ${formatValue(IB * 1000, 'mA')}`,
-      result: `IC = ${formatValue(IC * 1000, 'mA')}`
-    });
-
-    // Step 3: Calculate emitter current
-    const IE = IC + IB;
-    steps.push({
-      title: 'Find Emitter Current',
-      explanation: 'By Kirchhoff\'s Current Law at the emitter node, the emitter current equals the sum of collector and base currents. Since β is typically large, IE ≈ IC in most practical cases.',
-      formula: 'IE = IC + IB',
-      substitution: `IE = ${formatValue(IC * 1000, 'mA')} + ${formatValue(IB * 1000, 'mA')}`,
-      result: `IE = ${formatValue(IE * 1000, 'mA')}`
-    });
-
-    // Step 4: Calculate collector-emitter voltage
-    const VCE = VCC - IC * (RC_ohms + RE_ohms);
-    steps.push({
-      title: 'Determine Collector-Emitter Voltage',
-      explanation: 'Applying KVL around the collector-emitter loop, VCE equals the supply voltage minus the voltage drops across the collector and emitter resistors. This determines the transistor\'s operating point.',
-      formula: 'VCE = VCC - IC × (RC + RE)',
-      substitution: `VCE = ${VCC} - ${formatValue(IC * 1000, 'mA')} × (${RC} + ${RE})kΩ`,
-      result: `VCE = ${formatValue(VCE, 'V')}`
-    });
-
-    // Calculate load line parameters
-    const IcSat = VCC / (RC + RE);
-    const VceCutoff = VCC;
-    const qPoint = { VCE: VCE, IC: IC * 1000 };
-
-    let operatingRegion = 'Active';
-    if (VCE < 0.2) {
-      operatingRegion = 'Saturation';
-      steps.push({
-        title: 'Operating Region Analysis',
-        explanation: 'The transistor enters saturation when VCE drops below approximately 0.2V. In this region, the collector-base junction becomes forward biased, and the transistor acts like a closed switch.',
-        formula: 'VCE < 0.2V indicates saturation',
-        substitution: `${formatValue(VCE, 'V')} < 0.2V`,
-        result: 'Transistor is in saturation'
-      });
+    if (i % 2 === 0) {
+      const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      label.textContent = icValue.toFixed(1);
+      label.setAttribute('x', -15);
+      label.setAttribute('y', y + 4);
+      label.setAttribute('text-anchor', 'end');
+      label.setAttribute('fill', '#333');
+      label.setAttribute('font-size', '12');
+      g.appendChild(label);
     }
-
-    return {
-      results: {
-        IB: formatValue(IB * 1000, 'mA'),
-        IC: formatValue(IC * 1000, 'mA'),
-        IE: formatValue(IE * 1000, 'mA'),
-        VCE: formatValue(VCE, 'V'),
-        region: operatingRegion
-      },
-      steps,
-      svg: this.getSVG('base'),
-      loadLine: { IcSat: IcSat * 1000, VceCutoff, qPoint }
-    };
   }
 
-  static solveVoltageDivider(inputs) {
-    const { VCC, R1, R2, RC, RE, beta, VBE } = inputs;
-    const R1_ohms = R1 * 1000;
-    const R2_ohms = R2 * 1000;
-    const RC_ohms = RC * 1000;
-    const RE_ohms = RE * 1000;
-    const steps = [];
+  // Enhanced load line with gradient
+  const loadLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  loadLine.setAttribute('x1', toX(0));
+  loadLine.setAttribute('y1', toY(IcSat));
+  loadLine.setAttribute('x2', toX(VceCutoff));
+  loadLine.setAttribute('y2', toY(0));
+  loadLine.setAttribute('stroke', '#1FB8CD');
+  loadLine.setAttribute('stroke-width', '3');
+  loadLine.setAttribute('stroke-dasharray', '5,5');
+  g.appendChild(loadLine);
 
-    // Step 1: Thevenin voltage
-    const VTH = (VCC * R2_ohms) / (R1_ohms + R2_ohms);
-    steps.push({
-      title: 'Calculate Thevenin Equivalent Voltage',
-      explanation: 'The voltage divider R1-R2 creates a stable base bias voltage. Using the voltage divider theorem, we find the Thevenin equivalent voltage seen by the base circuit.',
-      formula: 'VTH = VCC × R2 / (R1 + R2)',
-      substitution: `VTH = ${VCC} × ${R2}kΩ / (${R1}kΩ + ${R2}kΩ)`,
-      result: `VTH = ${formatValue(VTH, 'V')}`
-    });
+  // Enhanced Q-point with glow effect
+  const qPointCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  qPointCircle.setAttribute('cx', toX(qPoint.VCE));
+  qPointCircle.setAttribute('cy', toY(qPoint.IC));
+  qPointCircle.setAttribute('r', 8);
+  qPointCircle.setAttribute('fill', '#DB4545');
+  qPointCircle.setAttribute('stroke', '#B4413C');
+  qPointCircle.setAttribute('stroke-width', '3');
+  g.appendChild(qPointCircle);
 
-    // Step 2: Thevenin resistance
-    const RTH = (R1_ohms * R2_ohms) / (R1_ohms + R2_ohms);
-    steps.push({
-      title: 'Find Thevenin Equivalent Resistance',
-      explanation: 'The Thevenin resistance is the parallel combination of R1 and R2 as seen from the base terminal. This resistance affects the base current and overall circuit stability.',
-      formula: 'RTH = (R1 × R2) / (R1 + R2)',
-      substitution: `RTH = (${R1}kΩ × ${R2}kΩ) / (${R1}kΩ + ${R2}kΩ)`,
-      result: `RTH = ${formatValue(RTH / 1000, 'kΩ')}`
-    });
+  // Q-point label
+  const qLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  qLabel.textContent = `Q(${qPoint.VCE.toFixed(2)}V, ${qPoint.IC.toFixed(2)}mA)`;
+  qLabel.setAttribute('x', toX(qPoint.VCE) + 15);
+  qLabel.setAttribute('y', toY(qPoint.IC) - 10);
+  qLabel.setAttribute('fill', '#DB4545');
+  qLabel.setAttribute('font-size', '12');
+  qLabel.setAttribute('font-weight', 'bold');
+  g.appendChild(qLabel);
 
-    // Step 3: Collector current (exact analysis)
-    const IC = (VTH - VBE) / (RE_ohms + RTH / beta);
-    steps.push({
-      title: 'Calculate Collector Current',
-      explanation: 'Using the exact analysis that accounts for base current loading, the collector current depends on the Thevenin equivalent circuit and the emitter degeneration effect.',
-      formula: 'IC = (VTH - VBE) / (RE + RTH/β)',
-      substitution: `IC = (${formatValue(VTH, 'V')} - ${VBE}V) / (${RE}kΩ + ${formatValue(RTH / 1000, 'kΩ')}/${beta})`,
-      result: `IC = ${formatValue(IC * 1000, 'mA')}`
-    });
+  // Enhanced axis labels
+  const xlabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  xlabel.textContent = 'VCE (Volts)';
+  xlabel.setAttribute('x', viewW / 2);
+  xlabel.setAttribute('y', viewH + 45);
+  xlabel.setAttribute('text-anchor', 'middle');
+  xlabel.setAttribute('fill', '#333');
+  xlabel.setAttribute('font-size', '14');
+  xlabel.setAttribute('font-weight', 'bold');
+  g.appendChild(xlabel);
 
-    // Step 4: Base current
-    const IB = IC / beta;
-    steps.push({
-      title: 'Determine Base Current',
-      explanation: 'The base current is related to collector current by the transistor\'s current gain β. This relationship holds in the active region of operation.',
-      formula: 'IB = IC / β',
-      substitution: `IB = ${formatValue(IC * 1000, 'mA')} / ${beta}`,
-      result: `IB = ${formatValue(IB * 1000, 'mA')}`
-    });
+  const ylabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  ylabel.textContent = 'IC (mA)';
+  ylabel.setAttribute('x', -60);
+  ylabel.setAttribute('y', viewH / 2);
+  ylabel.setAttribute('transform', `rotate(-90 -60 ${viewH / 2})`);
+  ylabel.setAttribute('text-anchor', 'middle');
+  ylabel.setAttribute('fill', '#333');
+  ylabel.setAttribute('font-size', '14');
+  ylabel.setAttribute('font-weight', 'bold');
+  g.appendChild(ylabel);
 
-    // Step 5: Emitter current
-    const IE = IC + IB;
-    steps.push({
-      title: 'Calculate Emitter Current',
-      explanation: 'By Kirchhoff\'s Current Law at the emitter node, the emitter current is the sum of collector and base currents flowing out of the transistor.',
-      formula: 'IE = IC + IB',
-      substitution: `IE = ${formatValue(IC * 1000, 'mA')} + ${formatValue(IB * 1000, 'mA')}`,
-      result: `IE = ${formatValue(IE * 1000, 'mA')}`
-    });
+  // Enhanced title
+  const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  title.textContent = 'DC Load Line Analysis & Q-Point';
+  title.setAttribute('x', viewW / 2);
+  title.setAttribute('y', -15);
+  title.setAttribute('text-anchor', 'middle');
+  title.setAttribute('fill', '#333');
+  title.setAttribute('font-size', '16');
+  title.setAttribute('font-weight', 'bold');
+  g.appendChild(title);
 
-    // Step 6: Collector-emitter voltage
-    const VCE = VCC - IC * (RC_ohms + RE_ohms);
-    steps.push({
-      title: 'Find Collector-Emitter Voltage',
-      explanation: 'The collector-emitter voltage determines the operating point on the load line. It equals the supply voltage minus the voltage drops across the collector and emitter resistances.',
-      formula: 'VCE = VCC - IC × (RC + RE)',
-      substitution: `VCE = ${VCC}V - ${formatValue(IC * 1000, 'mA')} × (${RC}kΩ + ${RE}kΩ)`,
-      result: `VCE = ${formatValue(VCE, 'V')}`
-    });
+  // Legend
+  const legend = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  legend.setAttribute('transform', `translate(${viewW - 120}, 20)`);
+  
+  const legendBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  legendBg.setAttribute('width', 110);
+  legendBg.setAttribute('height', 50);
+  legendBg.setAttribute('fill', 'white');
+  legendBg.setAttribute('stroke', '#ccc');
+  legendBg.setAttribute('stroke-width', '1');
+  legendBg.setAttribute('rx', '5');
+  legend.appendChild(legendBg);
 
-    // Calculate load line parameters
-    const IcSat = VCC / (RC + RE);
-    const VceCutoff = VCC;
-    const qPoint = { VCE: VCE, IC: IC * 1000 };
+  const loadLineLegend = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  loadLineLegend.setAttribute('x1', 10);
+  loadLineLegend.setAttribute('y1', 15);
+  loadLineLegend.setAttribute('x2', 30);
+  loadLineLegend.setAttribute('y2', 15);
+  loadLineLegend.setAttribute('stroke', '#1FB8CD');
+  loadLineLegend.setAttribute('stroke-width', '3');
+  loadLineLegend.setAttribute('stroke-dasharray', '5,5');
+  legend.appendChild(loadLineLegend);
 
-    let operatingRegion = 'Active';
-    if (VCE < 0.2) operatingRegion = 'Saturation';
+  const loadLineLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  loadLineLabel.textContent = 'Load Line';
+  loadLineLabel.setAttribute('x', 35);
+  loadLineLabel.setAttribute('y', 19);
+  loadLineLabel.setAttribute('fill', '#333');
+  loadLineLabel.setAttribute('font-size', '10');
+  legend.appendChild(loadLineLabel);
 
-    return {
-      results: {
-        VTH: formatValue(VTH, 'V'),
-        RTH: formatValue(RTH / 1000, 'kΩ'),
-        IB: formatValue(IB * 1000, 'mA'),
-        IC: formatValue(IC * 1000, 'mA'),
-        IE: formatValue(IE * 1000, 'mA'),
-        VCE: formatValue(VCE, 'V'),
-        region: operatingRegion
-      },
-      steps,
-      svg: this.getSVG('voltage-divider'),
-      loadLine: { IcSat: IcSat * 1000, VceCutoff, qPoint }
-    };
-  }
+  const qPointLegend = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  qPointLegend.setAttribute('cx', 20);
+  qPointLegend.setAttribute('cy', 35);
+  qPointLegend.setAttribute('r', 6);
+  qPointLegend.setAttribute('fill', '#DB4545');
+  qPointLegend.setAttribute('stroke', '#B4413C');
+  qPointLegend.setAttribute('stroke-width', '2');
+  legend.appendChild(qPointLegend);
 
-  static solveCollectorFeedback(inputs) {
-    const { VCC, RC, RB, beta, VBE } = inputs;
-    const RC_ohms = RC * 1000;
-    const RB_ohms = RB * 1000;
-    const steps = [];
+  const qPointLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  qPointLabel.textContent = 'Q-Point';
+  qPointLabel.setAttribute('x', 35);
+  qPointLabel.setAttribute('y', 39);
+  qPointLabel.setAttribute('fill', '#333');
+  qPointLabel.setAttribute('font-size', '10');
+  legend.appendChild(qPointLabel);
 
-    // Iterative solution for collector feedback
-    const IC = (VCC - VBE) / (RC_ohms + RB_ohms / beta);
-    const IB = IC / beta;
-    const VCE = VCC - IC * RC_ohms;
+  g.appendChild(legend);
 
-    steps.push({
-      title: 'Analyze Feedback Loop',
-      explanation: 'In collector feedback bias, the base resistor connects to the collector, creating negative feedback. This improves stability by automatically adjusting the base current when collector current changes.',
-      formula: 'IC = (VCC - VBE) / (RC + RB/β)',
-      substitution: `IC = (${VCC} - ${VBE}) / (${RC}kΩ + ${RB}kΩ/${beta})`,
-      result: `IC = ${formatValue(IC * 1000, 'mA')}`
-    });
-
-    const IcSat = VCC / RC;
-    const VceCutoff = VCC;
-    const qPoint = { VCE: VCE, IC: IC * 1000 };
-
-    return {
-      results: {
-        IB: formatValue(IB * 1000, 'mA'),
-        IC: formatValue(IC * 1000, 'mA'),
-        VCE: formatValue(VCE, 'V'),
-        region: VCE < 0.2 ? 'Saturation' : 'Active'
-      },
-      steps,
-      svg: this.getSVG('collector-feedback'),
-      loadLine: { IcSat: IcSat * 1000, VceCutoff, qPoint }
-    };
-  }
-
-  static solveEmitterBias(inputs) {
-    const { VCC, RC, RE, beta, VBE } = inputs;
-    const RC_ohms = RC * 1000;
-    const RE_ohms = RE * 1000;
-    const steps = [];
-
-    // For emitter bias, base is connected to ground through large resistor
-    const IE = (VCC - VBE) / RE_ohms;
-    const IC = IE * beta / (beta + 1);
-    const IB = IE / (beta + 1);
-    const VCE = VCC - IC * RC_ohms - IE * RE_ohms;
-
-    steps.push({
-      title: 'Calculate Emitter Current',
-      explanation: 'In emitter bias, the emitter current is primarily determined by the supply voltage and emitter resistance, making it relatively independent of transistor parameters.',
-      formula: 'IE ≈ (VCC - VBE) / RE',
-      substitution: `IE = (${VCC} - ${VBE}) / ${RE}kΩ`,
-      result: `IE = ${formatValue(IE * 1000, 'mA')}`
-    });
-
-    const IcSat = VCC / (RC + RE);
-    const VceCutoff = VCC;
-    const qPoint = { VCE: VCE, IC: IC * 1000 };
-
-    return {
-      results: {
-        IB: formatValue(IB * 1000, 'mA'),
-        IC: formatValue(IC * 1000, 'mA'),
-        IE: formatValue(IE * 1000, 'mA'),
-        VCE: formatValue(VCE, 'V'),
-        region: VCE < 0.2 ? 'Saturation' : 'Active'
-      },
-      steps,
-      svg: this.getSVG('emitter-bias'),
-      loadLine: { IcSat: IcSat * 1000, VceCutoff, qPoint }
-    };
-  }
-
-  static solveDualSupply(inputs) {
-    const { VCC, VEE, RC, RE, beta, VBE } = inputs;
-    const RC_ohms = RC * 1000;
-    const RE_ohms = RE * 1000;
-    const steps = [];
-
-    // For dual supply, emitter current is well-defined
-    const IE = (0 - VBE - VEE) / RE_ohms;
-    const IC = IE * beta / (beta + 1);
-    const IB = IE / (beta + 1);
-    const VCE = VCC - IC * RC_ohms + IE * RE_ohms;
-
-    steps.push({
-      title: 'Analyze Dual Supply Operation',
-      explanation: 'With dual supplies, the emitter is referenced to the negative supply VEE, providing excellent bias stability and allowing for symmetric operation about ground.',
-      formula: 'IE = (0 - VBE - VEE) / RE',
-      substitution: `IE = (0 - ${VBE} - (${VEE})) / ${RE}kΩ`,
-      result: `IE = ${formatValue(IE * 1000, 'mA')}`
-    });
-
-    const IcSat = (VCC - VEE) / (RC + RE);
-    const VceCutoff = VCC - VEE;
-    const qPoint = { VCE: VCE, IC: IC * 1000 };
-
-    return {
-      results: {
-        IB: formatValue(IB * 1000, 'mA'),
-        IC: formatValue(IC * 1000, 'mA'),
-        IE: formatValue(IE * 1000, 'mA'),
-        VCE: formatValue(VCE, 'V'),
-        region: VCE < 0.2 ? 'Saturation' : 'Active'
-      },
-      steps,
-      svg: this.getSVG('dual-supply'),
-      loadLine: { IcSat: IcSat * 1000, VceCutoff, qPoint }
-    };
-  }
+  container.appendChild(svg);
 }
 
 // ===== ENHANCED OP-AMP SOLVER CLASS =====
