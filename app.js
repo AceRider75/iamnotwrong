@@ -54,136 +54,254 @@ const formatValue = (value, unit = '') => {
 };
 
 // ===== FIXED DYNAMIC LOAD LINE DRAWING UTILITY =====
-function drawLoadLine(canvas, IcSat, VceCutoff, qPoint) {
-  const ctx = canvas.getContext('2d');
-  const width = canvas.width;
-  const height = canvas.height;
+function renderBjtSvg(containerId, { IcSat, VceCutoff, qPoint }) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const existingSvg = container.querySelector('svg');
+  if (existingSvg) existingSvg.remove();
+
+  const width = 500;
+  const height = 350;
+  const margin = { top: 40, right: 40, bottom: 60, left: 80 };
+  const viewW = width - margin.left - margin.right;
+  const viewH = height - margin.top - margin.bottom;
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', width);
+  svg.setAttribute('height', height);
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.style.maxWidth = '100%';
+  svg.style.height = 'auto';
+  svg.style.border = '1px solid var(--color-border)';
+  svg.style.borderRadius = 'var(--radius-base)';
+  svg.style.background = 'white';
+
+  const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  bg.setAttribute('width', width);
+  bg.setAttribute('height', height);
+  bg.setAttribute('fill', 'white');
+  svg.appendChild(bg);
+
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  g.setAttribute('transform', `translate(${margin.left},${margin.top})`);
+  svg.appendChild(g);
+
+  const maxIC = Math.max(IcSat * 1.2, qPoint.IC * 1.5);
+  const maxVCE = Math.max(VceCutoff * 1.2, qPoint.VCE * 1.5);
+  const toX = vce => Math.max(0, Math.min(viewW, (vce / maxVCE) * viewW));
+  const toY = ic => Math.max(0, Math.min(viewH, viewH - (ic / maxIC) * viewH));
+
+  // Enhanced grid with better styling
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  const pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+  pattern.setAttribute('id', 'grid');
+  pattern.setAttribute('width', viewW / 10);
+  pattern.setAttribute('height', viewH / 10);
+  pattern.setAttribute('patternUnits', 'userSpaceOnUse');
   
-  // Clear canvas
-  ctx.clearRect(0, 0, width, height);
-  
-  // Set up coordinate system
-  const margin = 60;
-  const plotWidth = width - 2 * margin;
-  const plotHeight = height - 2 * margin;
-  
-  // Calculate scales with 10% headroom
-  const maxIC = IcSat * 1.1;
-  const maxVCE = VceCutoff * 1.1;
-  
-  // Draw background
-  ctx.fillStyle = '#f9f9f9';
-  ctx.fillRect(margin, margin, plotWidth, plotHeight);
-  
-  // Draw grid
-  ctx.strokeStyle = '#e0e0e0';
-  ctx.lineWidth = 1;
-  for (let i = 1; i <= 10; i++) {
-    const x = margin + (i * plotWidth / 10);
-    const y = margin + (i * plotHeight / 10);
-    ctx.beginPath();
-    ctx.moveTo(x, margin);
-    ctx.lineTo(x, height - margin);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(margin, y);
-    ctx.lineTo(width - margin, y);
-    ctx.stroke();
-  }
-  
-  // Draw axes
-  ctx.strokeStyle = '#333';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(margin, margin);
-  ctx.lineTo(margin, height - margin);
-  ctx.lineTo(width - margin, height - margin);
-  ctx.stroke();
-  
-  // Draw load line - FIXED COORDINATE SYSTEM
-  ctx.strokeStyle = '#2196F3';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  // Load line from (0, IcSat) to (VceCutoff, 0)
-  const loadLineStartX = margin + plotWidth * (0 / maxVCE);
-  const loadLineStartY = height - margin - plotHeight * (IcSat / maxIC);
-  const loadLineEndX = margin + plotWidth * (VceCutoff / maxVCE);
-  const loadLineEndY = height - margin - plotHeight * (0 / maxIC);
-  
-  ctx.moveTo(loadLineStartX, loadLineStartY);
-  ctx.lineTo(loadLineEndX, loadLineEndY);
-  ctx.stroke();
-  
-  // Draw Q-point - FIXED COORDINATE SYSTEM
-  const qX = margin + plotWidth * (qPoint.VCE / maxVCE);
-  const qY = height - margin - plotHeight * (qPoint.IC / maxIC);
-  
-  // Q-point circle
-  ctx.fillStyle = '#ff4444';
-  ctx.beginPath();
-  ctx.arc(qX, qY, 8, 0, 2 * Math.PI);
-  ctx.fill();
-  
-  // Q-point border
-  ctx.strokeStyle = '#cc0000';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  
-  // Q-point crosshairs
-  ctx.strokeStyle = '#ff4444';
-  ctx.lineWidth = 1;
-  ctx.setLineDash([5, 5]);
-  ctx.beginPath();
-  ctx.moveTo(qX, margin);
-  ctx.lineTo(qX, height - margin);
-  ctx.moveTo(margin, qY);
-  ctx.lineTo(width - margin, qY);
-  ctx.stroke();
-  ctx.setLineDash([]);
-  
-  // Add axis labels
-  ctx.fillStyle = '#333';
-  ctx.font = '14px Arial';
-  ctx.textAlign = 'center';
-  ctx.fillText('VCE (V)', width / 2, height - 15);
-  ctx.save();
-  ctx.translate(15, height / 2);
-  ctx.rotate(-Math.PI / 2);
-  ctx.fillText('IC (mA)', 0, 0);
-  ctx.restore();
-  
-  // Add scale labels
-  ctx.font = '12px Arial';
-  ctx.textAlign = 'center';
+  const gridRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  gridRect.setAttribute('width', viewW / 10);
+  gridRect.setAttribute('height', viewH / 10);
+  gridRect.setAttribute('fill', 'none');
+  gridRect.setAttribute('stroke', '#f0f0f0');
+  gridRect.setAttribute('stroke-width', '1');
+  pattern.appendChild(gridRect);
+  defs.appendChild(pattern);
+  svg.appendChild(defs);
+
+  const gridBackground = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  gridBackground.setAttribute('width', viewW);
+  gridBackground.setAttribute('height', viewH);
+  gridBackground.setAttribute('fill', 'url(#grid)');
+  g.appendChild(gridBackground);
+
+  // Enhanced axes with tick marks
+  const xAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  xAxis.setAttribute('x1', 0);
+  xAxis.setAttribute('y1', viewH);
+  xAxis.setAttribute('x2', viewW);
+  xAxis.setAttribute('y2', viewH);
+  xAxis.setAttribute('stroke', '#333');
+  xAxis.setAttribute('stroke-width', '2');
+  g.appendChild(xAxis);
+
+  const yAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  yAxis.setAttribute('x1', 0);
+  yAxis.setAttribute('y1', 0);
+  yAxis.setAttribute('x2', 0);
+  yAxis.setAttribute('y2', viewH);
+  yAxis.setAttribute('stroke', '#333');
+  yAxis.setAttribute('stroke-width', '2');
+  g.appendChild(yAxis);
+
+  // X-axis tick marks and labels
   for (let i = 0; i <= 10; i++) {
-    const vce = (i * maxVCE / 10);
-    const ic = (i * maxIC / 10);
-    const x = margin + (i * plotWidth / 10);
-    const y = height - margin - (i * plotHeight / 10);
+    const x = (i / 10) * viewW;
+    const vceValue = (i / 10) * maxVCE;
     
-    if (i % 2 === 0) { // Show every other label to avoid crowding
-      ctx.fillText(vce.toFixed(1), x, height - margin + 20);
-      ctx.fillText(ic.toFixed(1), margin - 25, y + 5);
+    const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    tick.setAttribute('x1', x);
+    tick.setAttribute('y1', viewH);
+    tick.setAttribute('x2', x);
+    tick.setAttribute('y2', viewH + 5);
+    tick.setAttribute('stroke', '#333');
+    tick.setAttribute('stroke-width', '1');
+    g.appendChild(tick);
+
+    if (i % 2 === 0) {
+      const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      label.textContent = vceValue.toFixed(1);
+      label.setAttribute('x', x);
+      label.setAttribute('y', viewH + 20);
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('fill', '#333');
+      label.setAttribute('font-size', '12');
+      g.appendChild(label);
     }
   }
+
+  // Y-axis tick marks and labels
+  for (let i = 0; i <= 10; i++) {
+    const y = (i / 10) * viewH;
+    const icValue = ((10 - i) / 10) * maxIC;
+    
+    const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    tick.setAttribute('x1', 0);
+    tick.setAttribute('y1', y);
+    tick.setAttribute('x2', -5);
+    tick.setAttribute('y2', y);
+    tick.setAttribute('stroke', '#333');
+    tick.setAttribute('stroke-width', '1');
+    g.appendChild(tick);
+
+    if (i % 2 === 0) {
+      const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      label.textContent = icValue.toFixed(1);
+      label.setAttribute('x', -15);
+      label.setAttribute('y', y + 4);
+      label.setAttribute('text-anchor', 'end');
+      label.setAttribute('fill', '#333');
+      label.setAttribute('font-size', '12');
+      g.appendChild(label);
+    }
+  }
+
+  // Enhanced load line with gradient
+  const loadLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  loadLine.setAttribute('x1', toX(0));
+  loadLine.setAttribute('y1', toY(IcSat));
+  loadLine.setAttribute('x2', toX(VceCutoff));
+  loadLine.setAttribute('y2', toY(0));
+  loadLine.setAttribute('stroke', '#1FB8CD');
+  loadLine.setAttribute('stroke-width', '3');
+  loadLine.setAttribute('stroke-dasharray', '5,5');
+  g.appendChild(loadLine);
+
+  // Enhanced Q-point with glow effect
+  const qPointCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  qPointCircle.setAttribute('cx', toX(qPoint.VCE));
+  qPointCircle.setAttribute('cy', toY(qPoint.IC));
+  qPointCircle.setAttribute('r', 8);
+  qPointCircle.setAttribute('fill', '#DB4545');
+  qPointCircle.setAttribute('stroke', '#B4413C');
+  qPointCircle.setAttribute('stroke-width', '3');
+  g.appendChild(qPointCircle);
+
+  // Q-point label
+  const qLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  qLabel.textContent = `Q(${qPoint.VCE.toFixed(2)}V, ${qPoint.IC.toFixed(2)}mA)`;
+  qLabel.setAttribute('x', toX(qPoint.VCE) + 15);
+  qLabel.setAttribute('y', toY(qPoint.IC) - 10);
+  qLabel.setAttribute('fill', '#DB4545');
+  qLabel.setAttribute('font-size', '12');
+  qLabel.setAttribute('font-weight', 'bold');
+  g.appendChild(qLabel);
+
+  // Enhanced axis labels
+  const xlabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  xlabel.textContent = 'VCE (Volts)';
+  xlabel.setAttribute('x', viewW / 2);
+  xlabel.setAttribute('y', viewH + 45);
+  xlabel.setAttribute('text-anchor', 'middle');
+  xlabel.setAttribute('fill', '#333');
+  xlabel.setAttribute('font-size', '14');
+  xlabel.setAttribute('font-weight', 'bold');
+  g.appendChild(xlabel);
+
+  const ylabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  ylabel.textContent = 'IC (mA)';
+  ylabel.setAttribute('x', -60);
+  ylabel.setAttribute('y', viewH / 2);
+  ylabel.setAttribute('transform', `rotate(-90 -60 ${viewH / 2})`);
+  ylabel.setAttribute('text-anchor', 'middle');
+  ylabel.setAttribute('fill', '#333');
+  ylabel.setAttribute('font-size', '14');
+  ylabel.setAttribute('font-weight', 'bold');
+  g.appendChild(ylabel);
+
+  // Enhanced title
+  const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  title.textContent = 'DC Load Line Analysis & Q-Point';
+  title.setAttribute('x', viewW / 2);
+  title.setAttribute('y', -15);
+  title.setAttribute('text-anchor', 'middle');
+  title.setAttribute('fill', '#333');
+  title.setAttribute('font-size', '16');
+  title.setAttribute('font-weight', 'bold');
+  g.appendChild(title);
+
+  // Legend
+  const legend = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  legend.setAttribute('transform', `translate(${viewW - 120}, 20)`);
   
-  // Add title
-  ctx.font = '16px Arial';
-  ctx.textAlign = 'center';
-  ctx.fillText('DC Load Line & Q-Point', width / 2, 25);
-  
-  // Add legend
-  ctx.font = '12px Arial';
-  ctx.textAlign = 'left';
-  ctx.fillStyle = '#2196F3';
-  ctx.fillText('— Load Line', width - 150, 50);
-  ctx.fillStyle = '#ff4444';
-  ctx.fillText('● Q-Point', width - 150, 70);
-  
-  // Add Q-point coordinates
-  ctx.fillStyle = '#333';
-  ctx.font = '12px Arial';
-  ctx.fillText(`Q-Point: (${qPoint.VCE.toFixed(2)}V, ${qPoint.IC.toFixed(2)}mA)`, width - 200, height - 20);
+  const legendBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  legendBg.setAttribute('width', 110);
+  legendBg.setAttribute('height', 50);
+  legendBg.setAttribute('fill', 'white');
+  legendBg.setAttribute('stroke', '#ccc');
+  legendBg.setAttribute('stroke-width', '1');
+  legendBg.setAttribute('rx', '5');
+  legend.appendChild(legendBg);
+
+  const loadLineLegend = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  loadLineLegend.setAttribute('x1', 10);
+  loadLineLegend.setAttribute('y1', 15);
+  loadLineLegend.setAttribute('x2', 30);
+  loadLineLegend.setAttribute('y2', 15);
+  loadLineLegend.setAttribute('stroke', '#1FB8CD');
+  loadLineLegend.setAttribute('stroke-width', '3');
+  loadLineLegend.setAttribute('stroke-dasharray', '5,5');
+  legend.appendChild(loadLineLegend);
+
+  const loadLineLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  loadLineLabel.textContent = 'Load Line';
+  loadLineLabel.setAttribute('x', 35);
+  loadLineLabel.setAttribute('y', 19);
+  loadLineLabel.setAttribute('fill', '#333');
+  loadLineLabel.setAttribute('font-size', '10');
+  legend.appendChild(loadLineLabel);
+
+  const qPointLegend = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  qPointLegend.setAttribute('cx', 20);
+  qPointLegend.setAttribute('cy', 35);
+  qPointLegend.setAttribute('r', 6);
+  qPointLegend.setAttribute('fill', '#DB4545');
+  qPointLegend.setAttribute('stroke', '#B4413C');
+  qPointLegend.setAttribute('stroke-width', '2');
+  legend.appendChild(qPointLegend);
+
+  const qPointLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  qPointLabel.textContent = 'Q-Point';
+  qPointLabel.setAttribute('x', 35);
+  qPointLabel.setAttribute('y', 39);
+  qPointLabel.setAttribute('fill', '#333');
+  qPointLabel.setAttribute('font-size', '10');
+  legend.appendChild(qPointLabel);
+
+  g.appendChild(legend);
+
+  container.appendChild(svg);
 }
 
 // ===== ENHANCED BJT SOLVER CLASS =====
