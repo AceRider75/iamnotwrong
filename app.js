@@ -1,6 +1,41 @@
 // ElectroSolve v2 - Enhanced Modular Electronics Problem Solver
 // Fixed Q-point coordinate system bug AND navigation issues - 2025-07-14
+class ThemeManager {
+  constructor() {
+    this.currentTheme = 'light';
+    this.themeToggle = document.getElementById('theme-toggle');
+    this.themeIcon = this.themeToggle.querySelector('.material-icons');
+    this.init();
+  }
 
+  init() {
+    // Check system preference
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      this.currentTheme = 'dark';
+    }
+    
+    this.applyTheme();
+    this.themeToggle.addEventListener('click', () => this.toggleTheme());
+    
+    // Listen for system theme changes
+    if (window.matchMedia) {
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        this.currentTheme = e.matches ? 'dark' : 'light';
+        this.applyTheme();
+      });
+    }
+  }
+
+  toggleTheme() {
+    this.currentTheme = this.currentTheme === 'light' ? 'dark' : 'light';
+    this.applyTheme();
+  }
+
+  applyTheme() {
+    document.documentElement.setAttribute('data-color-scheme', this.currentTheme);
+    this.themeIcon.textContent = this.currentTheme === 'light' ? 'dark_mode' : 'light_mode';
+  }
+}
 // ===== UTILITY FUNCTIONS =====
 const formatNumber = (num, decimals = 3) => {
   if (Math.abs(num) < 0.001) return num.toExponential(2);
