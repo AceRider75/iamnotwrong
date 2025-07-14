@@ -36,6 +36,8 @@ class ThemeManager {
     this.themeIcon.textContent = this.currentTheme === 'light' ? 'dark_mode' : 'light_mode';
   }
 }
+
+
 // ===== UTILITY FUNCTIONS =====
 const formatNumber = (num, decimals = 3) => {
   if (Math.abs(num) < 0.001) return num.toExponential(2);
