@@ -920,6 +920,8 @@ class OpAmpSolver {
 class ElectroSolveApp {
   constructor() {
     this.currentPanel = 'BJT Bias';
+    this.themeManager = new ThemeManager();
+
     this.init();
   }
 
