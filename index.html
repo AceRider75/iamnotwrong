@@ -1,206 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BJT Voltage Divider Bias Simulator - Educational</title>
-    <link rel="stylesheet" href="style.css" />
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  </head>
-  <body>
-    <header class="py-16 container">
-      <h1>BJT Voltage Divider Bias Simulator</h1>
-      <p class="color-text-secondary">
-        Learn BJT bias analysis with step-by-step calculations, theoretical explanations, and interactive visualization.
-      </p>
-    </header>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ElectroSolve – Comprehensive Circuit Analysis</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!--
+    ElectroSolve – Modular Electronics Problem Solver
+    Version patched 2025-07-14 to fix Q-point plotting coordinates
+  -->
+  <header class="header shadow-sm">
+    <div class="container flex items-center justify-between py-16">
+      <h1 class="app-title">ElectroSolve <span class="version">v2</span></h1>
+      <nav class="flex gap-8" id="tabBar"><!-- Tabs injected by JS --></nav>
+    </div>
+  </header>
 
-    <main class="container flex flex-col gap-16">
-      <!-- Controls -->
-      <section class="card">
-        <div class="card__header flex justify-between items-center">
-          <h2>Circuit Parameters</h2>
-          <div class="flex gap-8 items-center">
-            <select id="exampleSelect" class="form-control" title="Load an example configuration">
-              <option value="custom">&mdash; Custom &mdash;</option>
-            </select>
-            <button id="resetBtn" class="btn btn--secondary btn--sm" title="Reset to default values">Reset</button>
-          </div>
-        </div>
-        <div class="card__body">
-          <form id="paramForm" class="grid-3-col gap-16">
-            <!-- Parameter inputs will be inserted by JS -->
-          </form>
-        </div>
-      </section>
+  <main class="container" id="appRoot"><!-- Panels injected by JS --></main>
 
-      <!-- Analysis Method Selection -->
-      <section class="card">
-        <div class="card__header">
-          <h2>Analysis Method</h2>
-        </div>
-        <div class="card__body">
-          <div class="flex gap-16 items-center">
-            <label class="radio-group">
-              <input type="radio" name="analysisMethod" value="exact" checked>
-              <span>Exact Method (Thevenin Equivalent)</span>
-            </label>
-            <label class="radio-group">
-              <input type="radio" name="analysisMethod" value="approximate">
-              <span>Approximate Method</span>
-            </label>
-          </div>
-          <div id="methodExplanation" class="method-explanation mt-8">
-            <!-- Method explanation will be inserted by JS -->
-          </div>
-        </div>
-      </section>
+  <footer class="container py-16 text-center">
+    <small>&copy; 2025 ElectroSolve. All rights reserved.</small>
+  </footer>
 
-      <!-- Step-by-Step Calculations -->
-      <section class="card">
-        <div class="card__header flex justify-between items-center">
-          <h2>Step-by-Step Analysis</h2>
-          <span id="opStatus" class="status status--info">Active</span>
-        </div>
-        <div class="card__body">
-          <div id="calculationSteps" class="calculation-steps">
-            <!-- Steps will be inserted by JS -->
-          </div>
-        </div>
-      </section>
-
-      <!-- Results Summary -->
-      <section class="card">
-        <div class="card__header">
-          <h2>Results Summary</h2>
-        </div>
-        <div class="card__body">
-          <div id="resultsGrid" class="grid-4-col gap-16">
-            <!-- Results will be inserted by JS -->
-          </div>
-        </div>
-      </section>
-
-      <!-- Method Comparison -->
-      <section class="card">
-        <div class="card__header">
-          <h2>Method Comparison</h2>
-        </div>
-        <div class="card__body">
-          <div id="methodComparison" class="method-comparison">
-            <!-- Comparison will be inserted by JS -->
-          </div>
-        </div>
-      </section>
-
-      <!-- Load Line Chart -->
-      <section class="card">
-        <div class="card__header">
-          <h2>Load Line & Q-Point Analysis</h2>
-        </div>
-        <div class="card__body">
-          <canvas id="loadLineChart" height="300"></canvas>
-        </div>
-      </section>
-
-      <!-- Circuit Diagram -->
-      <section class="card">
-        <div class="card__header">
-          <h2>Circuit Diagram</h2>
-        </div>
-        <div class="card__body flex justify-center">
-          <svg
-            id="circuitSVG"
-            xmlns="http://www.w3.org/2000/svg"
-            width="500"
-            height="300"
-            viewBox="0 0 500 300"
-          >
-            <!-- VCC Supply Line -->
-            <line x1="20" y1="30" x2="460" y2="30" stroke="var(--color-primary)" stroke-width="3" />
-            <text x="470" y="35" font-size="14" fill="var(--color-text)" font-weight="bold">VCC</text>
-
-            <!-- R1 -->
-            <line x1="120" y1="30" x2="120" y2="80" stroke="var(--color-text)" stroke-width="2" />
-            <rect x="110" y="80" width="20" height="50" fill="none" stroke="var(--color-text)" stroke-width="2" />
-            <text x="135" y="105" font-size="12" fill="var(--color-text)" font-weight="bold">R1</text>
-
-            <!-- R2 -->
-            <line x1="120" y1="130" x2="120" y2="180" stroke="var(--color-text)" stroke-width="2" />
-            <rect x="110" y="180" width="20" height="50" fill="none" stroke="var(--color-text)" stroke-width="2" />
-            <text x="135" y="205" font-size="12" fill="var(--color-text)" font-weight="bold">R2</text>
-
-            <!-- Base connection -->
-            <line x1="120" y1="130" x2="250" y2="130" stroke="var(--color-success)" stroke-width="2" />
-            <circle cx="245" cy="130" r="3" fill="var(--color-success)" />
-
-            <!-- Transistor -->
-            <circle cx="280" cy="150" r="25" stroke="var(--color-text)" stroke-width="2" fill="var(--color-surface)" />
-            <text x="280" y="155" font-size="12" fill="var(--color-text)" text-anchor="middle" font-weight="bold">Q1</text>
-            
-            <!-- Collector -->
-            <line x1="280" y1="125" x2="280" y2="30" stroke="var(--color-error)" stroke-width="2" />
-            <rect x="270" y="50" width="20" height="50" fill="none" stroke="var(--color-text)" stroke-width="2" />
-            <text x="295" y="75" font-size="12" fill="var(--color-text)" font-weight="bold">RC</text>
-
-            <!-- Emitter -->
-            <line x1="280" y1="175" x2="280" y2="230" stroke="var(--color-warning)" stroke-width="2" />
-            <rect x="270" y="200" width="20" height="50" fill="none" stroke="var(--color-text)" stroke-width="2" />
-            <text x="295" y="225" font-size="12" fill="var(--color-text)" font-weight="bold">RE</text>
-
-            <!-- Ground -->
-            <line x1="20" y1="270" x2="460" y2="270" stroke="var(--color-text)" stroke-width="3" />
-            <line x1="120" y1="230" x2="120" y2="270" stroke="var(--color-text)" stroke-width="2" />
-            <line x1="280" y1="250" x2="280" y2="270" stroke="var(--color-text)" stroke-width="2" />
-            <text x="470" y="275" font-size="14" fill="var(--color-text)" font-weight="bold">GND</text>
-
-            <!-- Current arrows -->
-            <defs>
-              <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                <polygon points="0 0, 10 3.5, 0 7" fill="var(--color-primary)" />
-              </marker>
-            </defs>
-            
-            <!-- Current labels -->
-            <text x="140" y="110" font-size="10" fill="var(--color-success)" font-weight="bold">IB</text>
-            <text x="300" y="90" font-size="10" fill="var(--color-error)" font-weight="bold">IC</text>
-            <text x="300" y="240" font-size="10" fill="var(--color-warning)" font-weight="bold">IE</text>
-          </svg>
-        </div>
-      </section>
-
-      <!-- Educational Notes -->
-      <section class="card">
-        <div class="card__header">
-          <h2>Key Learning Points</h2>
-        </div>
-        <div class="card__body">
-          <div class="educational-notes">
-            <div class="note-item">
-              <h4>Why Voltage Divider Bias?</h4>
-              <p>Voltage divider bias provides excellent stability against variations in transistor parameters (β) and temperature. The base voltage is primarily determined by the voltage divider ratio, not the transistor characteristics.</p>
-            </div>
-            <div class="note-item">
-              <h4>Role of Emitter Resistor (RE)</h4>
-              <p>RE provides negative feedback that stabilizes the operating point. If IC increases, VE increases, which reduces VBE and tends to decrease IC, providing automatic stabilization.</p>
-            </div>
-            <div class="note-item">
-              <h4>When to Use Each Method</h4>
-              <p><strong>Exact Method:</strong> Always accurate but more complex. Use when precision is critical.<br>
-              <strong>Approximate Method:</strong> Simpler but requires RTH ≪ (β+1)×RE. Use for quick estimates when this condition is met.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <footer class="container py-16">
-      <p class="font-size-sm color-text-secondary">
-        Educational BJT Simulator - Understanding transistor bias through step-by-step analysis
-      </p>
-    </footer>
-
-    <script src="app.js"></script>
-  </body>
+  <script type="module" src="app.js"></script>
+</body>
 </html>
