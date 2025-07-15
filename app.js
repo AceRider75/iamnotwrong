@@ -1316,6 +1316,7 @@ class ElectroSolveApp {
         <button class="logic-tab active" id="tab-boolean">Boolean Simplification</button>
         <button class="logic-tab" id="tab-truth">Truth Table</button>
         <button class="logic-tab" id="tab-kmap">Karnaugh Map</button>
+        <button class="logic-tab" id="tab-kmap-minterms">K-Map Solver (Minterms)</button>
       </div>
       <div class="logic-content" id="logic-boolean" style="display:block;">
         <h3>Boolean Expression Simplification</h3>
@@ -1344,6 +1345,19 @@ class ElectroSolveApp {
         </form>
         <div class="logic-result" id="kmap-result"></div>
       </div>
+      <div class="logic-content" id="logic-kmap-minterms" style="display:none;">
+        <h3>K-Map Solver (Minterms & Don't Cares)</h3>
+        <form id="kmap-minterms-form">
+          <label for="kmap-minterms-input">Enter Minterms (comma-separated):</label>
+          <input type="text" id="kmap-minterms-input" class="form-control" placeholder="e.g. 1,3,5" required />
+          <label for="kmap-dc-input">Enter Don't Cares (comma-separated, optional):</label>
+          <input type="text" id="kmap-dc-input" class="form-control" placeholder="e.g. 2,7" />
+          <label for="kmap-vars-input">Number of Variables (2-4):</label>
+          <input type="number" id="kmap-vars-input" class="form-control" min="2" max="4" value="3" required />
+          <button type="submit" class="btn btn--primary">Solve K-Map</button>
+        </form>
+        <div class="logic-result" id="kmap-minterms-result"></div>
+      </div>
     `;
 
     // Tab switching logic
@@ -1351,32 +1365,50 @@ class ElectroSolveApp {
       const tabBoolean = panel.querySelector('#tab-boolean');
       const tabTruth = panel.querySelector('#tab-truth');
       const tabKmap = panel.querySelector('#tab-kmap');
+      const tabKmapMinterms = panel.querySelector('#tab-kmap-minterms');
       const contentBoolean = panel.querySelector('#logic-boolean');
       const contentTruth = panel.querySelector('#logic-truth');
       const contentKmap = panel.querySelector('#logic-kmap');
+      const contentKmapMinterms = panel.querySelector('#logic-kmap-minterms');
       tabBoolean.addEventListener('click', () => {
         tabBoolean.classList.add('active');
         tabTruth.classList.remove('active');
         tabKmap.classList.remove('active');
+        tabKmapMinterms.classList.remove('active');
         contentBoolean.style.display = 'block';
         contentTruth.style.display = 'none';
         contentKmap.style.display = 'none';
+        contentKmapMinterms.style.display = 'none';
       });
       tabTruth.addEventListener('click', () => {
         tabTruth.classList.add('active');
         tabBoolean.classList.remove('active');
         tabKmap.classList.remove('active');
+        tabKmapMinterms.classList.remove('active');
         contentBoolean.style.display = 'none';
         contentTruth.style.display = 'block';
         contentKmap.style.display = 'none';
+        contentKmapMinterms.style.display = 'none';
       });
       tabKmap.addEventListener('click', () => {
         tabKmap.classList.add('active');
         tabBoolean.classList.remove('active');
         tabTruth.classList.remove('active');
+        tabKmapMinterms.classList.remove('active');
         contentBoolean.style.display = 'none';
         contentTruth.style.display = 'none';
         contentKmap.style.display = 'block';
+        contentKmapMinterms.style.display = 'none';
+      });
+      tabKmapMinterms.addEventListener('click', () => {
+        tabKmapMinterms.classList.add('active');
+        tabBoolean.classList.remove('active');
+        tabTruth.classList.remove('active');
+        tabKmap.classList.remove('active');
+        contentBoolean.style.display = 'none';
+        contentTruth.style.display = 'none';
+        contentKmap.style.display = 'none';
+        contentKmapMinterms.style.display = 'block';
       });
 
       // Boolean Simplification Logic
@@ -1448,6 +1480,35 @@ class ElectroSolveApp {
         } catch (err) {
           kmapResult.innerHTML = `<div class="error-message">Error: ${err.message}</div>`;
         }
+      });
+
+      // K-Map Minterms Solver Logic
+      const kmapMintermsForm = panel.querySelector('#kmap-minterms-form');
+      const kmapMintermsInput = panel.querySelector('#kmap-minterms-input');
+      const kmapDCInput = panel.querySelector('#kmap-dc-input');
+      const kmapVarsInput = panel.querySelector('#kmap-vars-input');
+      const kmapMintermsResult = panel.querySelector('#kmap-minterms-result');
+      kmapMintermsForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const minterms = kmapMintermsInput.value.split(',').map(x => x.trim()).filter(x => x !== '').map(Number);
+        const dcs = kmapDCInput.value.split(',').map(x => x.trim()).filter(x => x !== '').map(Number);
+        const n = parseInt(kmapVarsInput.value);
+        if (isNaN(n) || n < 2 || n > 4) {
+          kmapMintermsResult.innerHTML = '<div class="error-message">Number of variables must be 2-4.</div>';
+          return;
+        }
+        if (minterms.some(x => isNaN(x) || x < 0 || x >= (1 << n))) {
+          kmapMintermsResult.innerHTML = '<div class="error-message">Invalid minterm index.</div>';
+          return;
+        }
+        if (dcs.some(x => isNaN(x) || x < 0 || x >= (1 << n))) {
+          kmapMintermsResult.innerHTML = '<div class="error-message">Invalid don\'t care index.</div>';
+          return;
+        }
+        // Render K-map with minterms and don't cares
+        kmapMintermsResult.innerHTML = renderKMapMinterms(n, minterms, dcs);
+        // Show step-by-step simplification
+        kmapMintermsResult.innerHTML += renderKMapSteps(n, minterms, dcs);
       });
     }, 0);
 
@@ -1973,5 +2034,137 @@ function renderKMap(vars, minterms) {
   html += '</tbody></table>';
   // Optionally, add grouping/prime implicant visualization here
   html += `<div class="kmap-summary">Minterms: ${minterms.length ? minterms.join(', ') : 'None'}</div>`;
+  return html;
+}
+// Render K-map with minterms and don't cares
+function renderKMapMinterms(n, minterms, dcs) {
+  // Gray code order for 2, 3, 4 variables
+  const gray = x => x ^ (x >> 1);
+  let rows, cols, rowLabels, colLabels;
+  if (n === 2) {
+    rows = 2; cols = 2;
+    rowLabels = ['0', '1'];
+    colLabels = ['0', '1'];
+  } else if (n === 3) {
+    rows = 2; cols = 4;
+    rowLabels = ['0', '1'];
+    colLabels = ['00', '01', '11', '10'];
+  } else if (n === 4) {
+    rows = 4; cols = 4;
+    rowLabels = ['00', '01', '11', '10'];
+    colLabels = ['00', '01', '11', '10'];
+  } else {
+    return '<div class="error-message">K-map only supports 2 to 4 variables.</div>';
+  }
+  let html = `<table class="kmap-table"><thead><tr><th></th>`;
+  for (const c of colLabels) html += `<th>${c}</th>`;
+  html += '</tr></thead><tbody>';
+  for (let r = 0; r < rows; r++) {
+    html += `<tr><th>${rowLabels[r]}</th>`;
+    for (let c = 0; c < cols; c++) {
+      let idx;
+      if (n === 2) idx = (r << 1) | c;
+      else if (n === 3) idx = (r << 2) | [0,1,3,2][c];
+      else if (n === 4) idx = ([0,1,3,2][r] << 2) | [0,1,3,2][c];
+      let cellClass = 'kmap-cell';
+      if (minterms.includes(idx)) cellClass += ' kmap-minterm';
+      else if (dcs.includes(idx)) cellClass += ' kmap-dc';
+      html += `<td class="${cellClass}">${minterms.includes(idx) ? '1' : dcs.includes(idx) ? 'X' : '0'}</td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  html += `<div class="kmap-summary">Minterms: ${minterms.length ? minterms.join(', ') : 'None'} | Don't Cares: ${dcs.length ? dcs.join(', ') : 'None'}</div>`;
+  return html;
+}
+// Step-by-step Quine-McCluskey for up to 4 variables
+function renderKMapSteps(n, minterms, dcs) {
+  if (n > 4) return '';
+  // 1. Initial grouping by number of 1s
+  let groups = {};
+  minterms.concat(dcs).forEach(m => {
+    const ones = m.toString(2).split('').filter(x => x === '1').length;
+    if (!groups[ones]) groups[ones] = [];
+    groups[ones].push(m);
+  });
+  let html = '<div class="kmap-step"><b>Step 1: Initial Grouping</b><br>';
+  Object.keys(groups).sort((a,b)=>a-b).forEach(k => {
+    html += `Group ${k}: [${groups[k].join(', ')}]<br>`;
+  });
+  html += '</div>';
+  // 2. Prime implicant chart (simple, not full Petrick's method)
+  // For brevity, use a basic Quine-McCluskey for up to 4 vars
+  function combine(a, b) {
+    let diff = 0, pos = -1;
+    for (let i = 0; i < n; i++) {
+      if (((a >> i) & 1) !== ((b >> i) & 1)) { diff++; pos = i; }
+    }
+    if (diff === 1) return a & ~(1 << pos);
+    return null;
+  }
+  let terms = minterms.concat(dcs).map(m => ({ms: [m], mask: 0, used: false}));
+  let next = [], primeImplicants = [];
+  let step = 2;
+  while (terms.length) {
+    let marked = new Array(terms.length).fill(false);
+    let combined = [];
+    for (let i = 0; i < terms.length; i++) {
+      for (let j = i+1; j < terms.length; j++) {
+        let diff = terms[i].ms[0] ^ terms[j].ms[0];
+        if (diff && (diff & (diff-1)) === 0 && terms[i].mask === terms[j].mask) {
+          let mask = terms[i].mask | diff;
+          let ms = Array.from(new Set(terms[i].ms.concat(terms[j].ms))).sort((a,b)=>a-b);
+          let exists = next.find(t => t.ms.join(',') === ms.join(',') && t.mask === mask);
+          if (!exists) next.push({ms, mask, used: false});
+          marked[i] = marked[j] = true;
+        }
+      }
+    }
+    for (let i = 0; i < terms.length; i++) {
+      if (!marked[i] && !terms[i].used) primeImplicants.push(terms[i]);
+    }
+    if (next.length === 0) break;
+    terms = next;
+    next = [];
+    html += `<div class="kmap-step"><b>Step ${step++}: Combine Groups</b><br>`;
+    terms.forEach(t => {
+      html += `Implicant: [${t.ms.join(', ')}], Mask: ${t.mask.toString(2).padStart(n,'0')}<br>`;
+    });
+    html += '</div>';
+  }
+  // 3. Prime implicant chart for minterms
+  html += '<div class="kmap-step"><b>Step '+step+++': Prime Implicants</b><br>';
+  primeImplicants.forEach((t,i) => {
+    html += `PI ${i+1}: covers [${t.ms.join(', ')}], Mask: ${t.mask.toString(2).padStart(n,'0')}<br>`;
+  });
+  html += '</div>';
+  // 4. Cover minterms with prime implicants (greedy)
+  let covered = new Set();
+  let cover = [];
+  for (let t of primeImplicants) {
+    let covers = t.ms.filter(m => minterms.includes(m));
+    if (covers.length) {
+      cover.push(t);
+      covers.forEach(m => covered.add(m));
+    }
+    if (covered.size === minterms.length) break;
+  }
+  html += '<div class="kmap-step"><b>Step '+step+++': Cover Minterms</b><br>';
+  cover.forEach((t,i) => {
+    html += `Selected: [${t.ms.join(', ')}], Mask: ${t.mask.toString(2).padStart(n,'0')}<br>`;
+  });
+  html += '</div>';
+  // 5. Final expression
+  function termToExpr(t) {
+    let bits = [];
+    for (let i = n-1; i >= 0; i--) {
+      if ((t.mask & (1<<i)) === 0) {
+        bits.push(((t.ms[0]>>i)&1) ? String.fromCharCode(65+n-i-1) : String.fromCharCode(65+n-i-1)+"'");
+      }
+    }
+    return bits.join('');
+  }
+  let expr = cover.map(termToExpr).join(' + ');
+  html += `<div class="kmap-step"><b>Final Minimal SOP Expression:</b> <span style="color:var(--color-primary,#43a047);font-weight:bold;">${expr||'0'}</span></div>`;
   return html;
 }
