@@ -36,12 +36,6 @@ class ThemeManager {
     this.themeIcon.textContent = this.currentTheme === 'light' ? 'dark_mode' : 'light_mode';
   }
 }
-
-
-// ===== UTILITY FUNCTIONS =====
-// ElectroSolve v2 - Enhanced Modular Electronics Problem Solver
-// Fixed Q-point coordinate system bug AND navigation issues - 2025-07-14
-
 // ===== UTILITY FUNCTIONS =====
 const formatNumber = (num, decimals = 3) => {
   if (Math.abs(num) < 0.001) return num.toExponential(2);
@@ -68,10 +62,9 @@ function drawLoadLine(canvas, IcSat, VceCutoff, qPoint, snapToLoadLine = false) 
   const plotWidth = width - 2 * margin;
   const plotHeight = height - 2 * margin;
 
-  // Convert currents from mA to μA for plotting
-  const maxIC = IcSat*1;       // μA scale with padding
-  const maxVCE = VceCutoff * 1;         // V scale with padding
-
+  
+  const maxIC = IcSat*1;      
+  const maxVCE = VceCutoff * 1;       
   ctx.clearRect(0, 0, width, height);
 
   // Draw background
@@ -2160,8 +2153,7 @@ function renderKMapSteps(n, minterms, dcs) {
     html += `Group ${k}: [${groups[k].join(', ')}]<br>`;
   });
   html += '</div>';
-  // 2. Prime implicant chart (simple, not full Petrick's method)
-  // For brevity, use a basic Quine-McCluskey for up to 4 vars
+
   function combine(a, b) {
     let diff = 0, pos = -1;
     for (let i = 0; i < n; i++) {
