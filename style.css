@@ -1325,39 +1325,89 @@ input.form-control:focus,
 .truth-table, .kmap-table {
   border-collapse: collapse;
   margin: 1.5em auto;
-  background: #fff;
+  background: var(--color-bg-panel, #fff);
   box-shadow: 0 2px 8px rgba(0,0,0,0.07);
 }
 .truth-table th, .truth-table td, .kmap-table th, .kmap-table td {
-  border: 1.5px solid #bbb;
+  border: 1.5px solid var(--color-border, #bbb);
   padding: 0.6em 1.1em;
   text-align: center;
   font-size: 1.1em;
   min-width: 2.2em;
   min-height: 2.2em;
-  background: #fff;
-  color: #222;
+  background: var(--color-bg-panel, #fff);
+  color: var(--color-text, #222);
 }
 .truth-table th, .kmap-table th {
-  background: #f5f5f5;
-  color: #222;
+  background: var(--color-bg-accent, #f5f5f5);
+  color: var(--color-text, #222);
   font-weight: 600;
 }
 .truth-table td:last-child {
-  background: #c8e6c9;
-  color: #222;
+  background: var(--color-primary, #c8e6c9);
+  color: var(--color-text, #222);
   font-weight: bold;
 }
 .kmap-minterm {
-  background: #c8e6c9 !important;
-  color: #222;
+  background: var(--color-primary, #c8e6c9) !important;
+  color: var(--color-text, #222);
   font-weight: bold;
-  box-shadow: 0 0 0 2px #43a047 inset;
+  box-shadow: 0 0 0 2px var(--color-primary, #43a047) inset;
 }
 .kmap-summary {
   margin-top: 1em;
   text-align: center;
   font-size: 1em;
-  color: #388e3c;
+  color: var(--color-primary, #388e3c);
   font-weight: 500;
+}
+.kmap-dc {
+  background: var(--color-bg-accent, #ffe082) !important;
+  color: var(--color-text, #222);
+  font-weight: bold;
+  box-shadow: 0 0 0 2px var(--color-bg-accent, #ffa000) inset;
+}
+.kmap-step {
+  background: var(--color-bg-accent, #f5f5f5);
+  color: var(--color-text, #222);
+  border-radius: 6px;
+  margin: 1em 0;
+  padding: 1em 1.5em;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+@media (prefers-color-scheme: dark) {
+  .truth-table, .kmap-table {
+    background: #23272e;
+  }
+  .truth-table th, .truth-table td, .kmap-table th, .kmap-table td {
+    background: #23272e;
+    color: #f5f5f5;
+    border-color: #444;
+  }
+  .truth-table th, .kmap-table th {
+    background: #2d323b;
+    color: #fff;
+  }
+  .truth-table td:last-child {
+    background: #388e3c;
+    color: #fff;
+  }
+  .kmap-minterm {
+    background: #388e3c !important;
+    color: #fff;
+    box-shadow: 0 0 0 2px #43a047 inset;
+  }
+  .kmap-dc {
+    background: #6d5c00 !important;
+    color: #fff;
+    box-shadow: 0 0 0 2px #ffe082 inset;
+  }
+  .kmap-summary {
+    color: #a5d6a7;
+  }
+  .kmap-step {
+    background: #2d323b;
+    color: #fff;
+  }
 }
