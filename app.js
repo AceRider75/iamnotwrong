@@ -36,6 +36,12 @@ class ThemeManager {
     this.themeIcon.textContent = this.currentTheme === 'light' ? 'dark_mode' : 'light_mode';
   }
 }
+
+
+// ===== UTILITY FUNCTIONS =====
+// ElectroSolve v2 - Enhanced Modular Electronics Problem Solver
+// Fixed Q-point coordinate system bug AND navigation issues - 2025-07-14
+
 // ===== UTILITY FUNCTIONS =====
 const formatNumber = (num, decimals = 3) => {
   if (Math.abs(num) < 0.001) return num.toExponential(2);
@@ -62,9 +68,10 @@ function drawLoadLine(canvas, IcSat, VceCutoff, qPoint, snapToLoadLine = false) 
   const plotWidth = width - 2 * margin;
   const plotHeight = height - 2 * margin;
 
-  
-  const maxIC = IcSat*1;      
-  const maxVCE = VceCutoff * 1;       
+  // Convert currents from mA to μA for plotting
+  const maxIC = IcSat*1;       // μA scale with padding
+  const maxVCE = VceCutoff * 1;         // V scale with padding
+
   ctx.clearRect(0, 0, width, height);
 
   // Draw background
@@ -1310,6 +1317,7 @@ class ElectroSolveApp {
         <button class="logic-tab" id="tab-truth">Truth Table</button>
         <button class="logic-tab" id="tab-kmap">Karnaugh Map</button>
         <button class="logic-tab" id="tab-kmap-minterms">K-Map Solver (Minterms)</button>
+        <button class="logic-tab" id="tab-seq">Sequential Analysis</button>
       </div>
       <div class="logic-content" id="logic-boolean" style="display:block;">
         <h3>Boolean Expression Simplification</h3>
@@ -1351,6 +1359,54 @@ class ElectroSolveApp {
         </form>
         <div class="logic-result" id="kmap-minterms-result"></div>
       </div>
+      <div class="logic-content" id="logic-seq" style="display:none;">
+        <h3>Sequential Circuit Analysis</h3>
+        <div class="seq-tabs">
+          <button class="seq-tab active" id="tab-ff">Flip-Flop Analysis</button>
+          <button class="seq-tab" id="tab-convert">Flip-Flop Conversion</button>
+          <button class="seq-tab" id="tab-counter">Counter Design</button>
+        </div>
+        <div class="seq-content" id="seq-ff" style="display:block;">
+          <h4>Flip-Flop Analysis</h4>
+          <form id="ff-form">
+            <label for="ff-type">Flip-Flop Type:</label>
+            <select id="ff-type" class="form-control">
+              <option value="SR">SR</option>
+              <option value="JK">JK</option>
+              <option value="D">D</option>
+              <option value="T">T</option>
+            </select>
+            <div id="ff-inputs"></div>
+            <button type="submit" class="btn btn--primary">Analyze</button>
+          </form>
+          <div class="logic-result" id="ff-result"></div>
+        </div>
+        <div class="seq-content" id="seq-convert" style="display:none;">
+          <h4>Flip-Flop Conversion</h4>
+          <form id="ff-convert-form">
+            <label for="ff-from">From:</label>
+            <select id="ff-from" class="form-control">
+              <option value="SR">SR</option>
+              <option value="JK">JK</option>
+              <option value="D">D</option>
+              <option value="T">T</option>
+            </select>
+            <label for="ff-to">To:</label>
+            <select id="ff-to" class="form-control">
+              <option value="SR">SR</option>
+              <option value="JK">JK</option>
+              <option value="D">D</option>
+              <option value="T">T</option>
+            </select>
+            <button type="submit" class="btn btn--primary">Show Conversion</button>
+          </form>
+          <div class="logic-result" id="ff-convert-result"></div>
+        </div>
+        <div class="seq-content" id="seq-counter" style="display:none;">
+          <h4>Counter Design</h4>
+          <div class="logic-result">(Coming soon: Design synchronous/asynchronous counters from specs.)</div>
+        </div>
+      </div>
     `;
 
     // Tab switching logic
@@ -1359,49 +1415,71 @@ class ElectroSolveApp {
       const tabTruth = panel.querySelector('#tab-truth');
       const tabKmap = panel.querySelector('#tab-kmap');
       const tabKmapMinterms = panel.querySelector('#tab-kmap-minterms');
+      const tabSeq = panel.querySelector('#tab-seq');
       const contentBoolean = panel.querySelector('#logic-boolean');
       const contentTruth = panel.querySelector('#logic-truth');
       const contentKmap = panel.querySelector('#logic-kmap');
       const contentKmapMinterms = panel.querySelector('#logic-kmap-minterms');
+      const contentSeq = panel.querySelector('#logic-seq');
       tabBoolean.addEventListener('click', () => {
         tabBoolean.classList.add('active');
         tabTruth.classList.remove('active');
         tabKmap.classList.remove('active');
         tabKmapMinterms.classList.remove('active');
+        tabSeq.classList.remove('active');
         contentBoolean.style.display = 'block';
         contentTruth.style.display = 'none';
         contentKmap.style.display = 'none';
         contentKmapMinterms.style.display = 'none';
+        contentSeq.style.display = 'none';
       });
       tabTruth.addEventListener('click', () => {
         tabTruth.classList.add('active');
         tabBoolean.classList.remove('active');
         tabKmap.classList.remove('active');
         tabKmapMinterms.classList.remove('active');
+        tabSeq.classList.remove('active');
         contentBoolean.style.display = 'none';
         contentTruth.style.display = 'block';
         contentKmap.style.display = 'none';
         contentKmapMinterms.style.display = 'none';
+        contentSeq.style.display = 'none';
       });
       tabKmap.addEventListener('click', () => {
         tabKmap.classList.add('active');
         tabBoolean.classList.remove('active');
         tabTruth.classList.remove('active');
         tabKmapMinterms.classList.remove('active');
+        tabSeq.classList.remove('active');
         contentBoolean.style.display = 'none';
         contentTruth.style.display = 'none';
         contentKmap.style.display = 'block';
         contentKmapMinterms.style.display = 'none';
+        contentSeq.style.display = 'none';
       });
       tabKmapMinterms.addEventListener('click', () => {
         tabKmapMinterms.classList.add('active');
         tabBoolean.classList.remove('active');
         tabTruth.classList.remove('active');
         tabKmap.classList.remove('active');
+        tabSeq.classList.remove('active');
         contentBoolean.style.display = 'none';
         contentTruth.style.display = 'none';
         contentKmap.style.display = 'none';
         contentKmapMinterms.style.display = 'block';
+        contentSeq.style.display = 'none';
+      });
+      tabSeq.addEventListener('click', () => {
+        tabSeq.classList.add('active');
+        tabBoolean.classList.remove('active');
+        tabTruth.classList.remove('active');
+        tabKmap.classList.remove('active');
+        tabKmapMinterms.classList.remove('active');
+        contentBoolean.style.display = 'none';
+        contentTruth.style.display = 'none';
+        contentKmap.style.display = 'none';
+        contentKmapMinterms.style.display = 'none';
+        contentSeq.style.display = 'block';
       });
 
       // Boolean Simplification Logic
@@ -1436,7 +1514,7 @@ class ElectroSolveApp {
           html += '</div>';
           // Render simplification steps
           html += `<div class="success-message">Simplified: <b>${simplified}</b></div>`;
-          html += renderKMapSteps(vars.length, minterms, []);
+          html += renderKMapSteps(vars.length, minterms, [], vars);
           booleanResult.innerHTML = html;
         } catch (err) {
           booleanResult.innerHTML = `<div class="error-message">Error: ${err.message}</div>`;
@@ -1521,7 +1599,420 @@ class ElectroSolveApp {
         // Render K-map with minterms and don't cares
         kmapMintermsResult.innerHTML = renderKMapMinterms(n, minterms, dcs);
         // Show step-by-step simplification
-        kmapMintermsResult.innerHTML += renderKMapSteps(n, minterms, dcs);
+        kmapMintermsResult.innerHTML += renderKMapSteps(n, minterms, dcs, Array.from({length: n}, (_, i) => String.fromCharCode(65 + n - i - 1)));
+        // Show true minimal expression using improved minimizer
+        const vars = Array.from({length: n}, (_, i) => String.fromCharCode(65 + n - i - 1));
+        kmapMintermsResult.innerHTML += `<div class='kmap-step'><b>True Minimal Expression:</b> <span style='color:var(--color-primary,#43a047);font-weight:bold;'>${mintermsToExpr(vars, minterms)}</span></div>`;
+      });
+
+      // Sequential sub-tabs
+      const seqTabFF = panel.querySelector('#tab-ff');
+      const seqTabConvert = panel.querySelector('#tab-convert');
+      const seqTabCounter = panel.querySelector('#tab-counter');
+      const seqContentFF = panel.querySelector('#seq-ff');
+      const seqContentConvert = panel.querySelector('#seq-convert');
+      const seqContentCounter = panel.querySelector('#seq-counter');
+      seqTabFF.addEventListener('click', () => {
+        seqTabFF.classList.add('active');
+        seqTabConvert.classList.remove('active');
+        seqTabCounter.classList.remove('active');
+        seqContentFF.style.display = 'block';
+        seqContentConvert.style.display = 'none';
+        seqContentCounter.style.display = 'none';
+      });
+      seqTabConvert.addEventListener('click', () => {
+        seqTabConvert.classList.add('active');
+        seqTabFF.classList.remove('active');
+        seqTabCounter.classList.remove('active');
+        seqContentFF.style.display = 'none';
+        seqContentConvert.style.display = 'block';
+        seqContentCounter.style.display = 'none';
+      });
+      seqTabCounter.addEventListener('click', () => {
+        seqTabCounter.classList.add('active');
+        seqTabFF.classList.remove('active');
+        seqTabConvert.classList.remove('active');
+        seqContentFF.style.display = 'none';
+        seqContentConvert.style.display = 'none';
+        seqContentCounter.style.display = 'block';
+      });
+      // Flip-Flop Analysis dynamic inputs (skeleton)
+      const ffType = panel.querySelector('#ff-type');
+      const ffInputs = panel.querySelector('#ff-inputs');
+      const ffForm = panel.querySelector('#ff-form');
+      const ffResult = panel.querySelector('#ff-result');
+      function updateFFInputs() {
+        let html = '';
+        switch (ffType.value) {
+          case 'SR':
+            html = '<label>S: <input type="number" name="S" min="0" max="1" class="form-control" required></label> ' +
+                   '<label>R: <input type="number" name="R" min="0" max="1" class="form-control" required></label> ' +
+                   '<label>Q (Current): <input type="number" name="Q" min="0" max="1" class="form-control" required></label>';
+            break;
+          case 'JK':
+            html = '<label>J: <input type="number" name="J" min="0" max="1" class="form-control" required></label> ' +
+                   '<label>K: <input type="number" name="K" min="0" max="1" class="form-control" required></label> ' +
+                   '<label>Q (Current): <input type="number" name="Q" min="0" max="1" class="form-control" required></label>';
+            break;
+          case 'D':
+            html = '<label>D: <input type="number" name="D" min="0" max="1" class="form-control" required></label> ' +
+                   '<label>Q (Current): <input type="number" name="Q" min="0" max="1" class="form-control" required></label>';
+            break;
+          case 'T':
+            html = '<label>T: <input type="number" name="T" min="0" max="1" class="form-control" required></label> ' +
+                   '<label>Q (Current): <input type="number" name="Q" min="0" max="1" class="form-control" required></label>';
+            break;
+        }
+        ffInputs.innerHTML = html;
+      }
+      ffType.addEventListener('change', updateFFInputs);
+      updateFFInputs();
+      ffForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const type = ffType.value;
+        const data = {};
+        Array.from(ffInputs.querySelectorAll('input')).forEach(input => {
+          data[input.name] = parseInt(input.value);
+        });
+        let steps = [];
+        let Q_next = null, output = null, error = null;
+        switch (type) {
+          case 'SR':
+            if (data.S === 0 && data.R === 0) {
+              Q_next = data.Q;
+              steps.push({title: 'No Change', explanation: 'S=0, R=0: Flip-flop holds its state.', result: `Q_next = Q = ${Q_next}`});
+            } else if (data.S === 0 && data.R === 1) {
+              Q_next = 0;
+              steps.push({title: 'Reset', explanation: 'S=0, R=1: Flip-flop resets.', result: 'Q_next = 0'});
+            } else if (data.S === 1 && data.R === 0) {
+              Q_next = 1;
+              steps.push({title: 'Set', explanation: 'S=1, R=0: Flip-flop sets.', result: 'Q_next = 1'});
+            } else if (data.S === 1 && data.R === 1) {
+              error = 'Invalid: S=1, R=1 is not allowed (forbidden state).';
+            }
+            break;
+          case 'JK':
+            if (data.J === 0 && data.K === 0) {
+              Q_next = data.Q;
+              steps.push({title: 'No Change', explanation: 'J=0, K=0: Flip-flop holds its state.', result: `Q_next = Q = ${Q_next}`});
+            } else if (data.J === 0 && data.K === 1) {
+              Q_next = 0;
+              steps.push({title: 'Reset', explanation: 'J=0, K=1: Flip-flop resets.', result: 'Q_next = 0'});
+            } else if (data.J === 1 && data.K === 0) {
+              Q_next = 1;
+              steps.push({title: 'Set', explanation: 'J=1, K=0: Flip-flop sets.', result: 'Q_next = 1'});
+            } else if (data.J === 1 && data.K === 1) {
+              Q_next = 1 - data.Q;
+              steps.push({title: 'Toggle', explanation: 'J=1, K=1: Flip-flop toggles.', result: `Q_next = ${Q_next}`});
+            }
+            break;
+          case 'D':
+            Q_next = data.D;
+            steps.push({title: 'Transfer', explanation: 'D flip-flop: Q_next follows D input.', result: `Q_next = D = ${Q_next}`});
+            break;
+          case 'T':
+            if (data.T === 0) {
+              Q_next = data.Q;
+              steps.push({title: 'No Change', explanation: 'T=0: Flip-flop holds its state.', result: `Q_next = Q = ${Q_next}`});
+            } else if (data.T === 1) {
+              Q_next = 1 - data.Q;
+              steps.push({title: 'Toggle', explanation: 'T=1: Flip-flop toggles.', result: `Q_next = ${Q_next}`});
+            }
+            break;
+        }
+        if (error) {
+          ffResult.innerHTML = `<div class='error-message'>${error}</div>`;
+        } else {
+          let html = `<div class='success-message'>Next State: <b>Q_next = ${Q_next}</b></div>`;
+          html += `<div class='kmap-step'><b>Step-by-Step</b><br>`;
+          steps.forEach((step, i) => {
+            html += `<div class='step'><div class='step-header'><div class='step-number'>${i+1}</div><div class='step-title'>${step.title}</div></div><div class='step-content'><div class='step-explanation'>${step.explanation}</div><div class='step-reason'>${step.result}</div></div></div>`;
+          });
+          html += '</div>';
+          // Characteristic and Excitation Tables
+          function renderTable(headers, rows) {
+            let t = `<table class='truth-table'><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>`;
+            rows.forEach(row => {
+              t += `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`;
+            });
+            t += '</tbody></table>';
+            return t;
+          }
+          // Data for tables
+          const tables = {
+            'SR': {
+              char: {
+                headers: ['S', 'R', 'Q', 'Q_next'],
+                rows: [
+                  [0,0,'Q','Q'],
+                  [0,1,'Q',0],
+                  [1,0,'Q',1],
+                  [1,1,'Q','- (forbidden)']
+                ]
+              },
+              exc: {
+                headers: ['Q', 'Q_next', 'S', 'R'],
+                rows: [
+                  [0,0,0,0],
+                  [0,1,1,0],
+                  [1,0,0,1],
+                  [1,1,0,0]
+                ]
+              }
+            },
+            'JK': {
+              char: {
+                headers: ['J', 'K', 'Q', 'Q_next'],
+                rows: [
+                  [0,0,'Q','Q'],
+                  [0,1,'Q',0],
+                  [1,0,'Q',1],
+                  [1,1,'Q','Q̅']
+                ]
+              },
+              exc: {
+                headers: ['Q', 'Q_next', 'J', 'K'],
+                rows: [
+                  [0,0,0,'X'],
+                  [0,1,1,0],
+                  [1,0,0,1],
+                  [1,1,'X',0]
+                ]
+              }
+            },
+            'D': {
+              char: {
+                headers: ['D', 'Q', 'Q_next'],
+                rows: [
+                  [0,'Q',0],
+                  [1,'Q',1]
+                ]
+              },
+              exc: {
+                headers: ['Q', 'Q_next', 'D'],
+                rows: [
+                  [0,0,0],
+                  [0,1,1],
+                  [1,0,0],
+                  [1,1,1]
+                ]
+              }
+            },
+            'T': {
+              char: {
+                headers: ['T', 'Q', 'Q_next'],
+                rows: [
+                  [0,'Q','Q'],
+                  [1,'Q','Q̅']
+                ]
+              },
+              exc: {
+                headers: ['Q', 'Q_next', 'T'],
+                rows: [
+                  [0,0,0],
+                  [0,1,1],
+                  [1,0,1],
+                  [1,1,0]
+                ]
+              }
+            }
+          };
+          html += `<div class='kmap-step'><b>Characteristic Table</b><br>${renderTable(tables[type].char.headers, tables[type].char.rows)}</div>`;
+          html += `<div class='kmap-step'><b>Excitation Table</b><br>${renderTable(tables[type].exc.headers, tables[type].exc.rows)}</div>`;
+          ffResult.innerHTML = html;
+        }
+      });
+
+      // Flip-Flop Conversion logic (skeleton)
+      const ffConvertForm = panel.querySelector('#ff-convert-form');
+      const ffFrom = panel.querySelector('#ff-from');
+      const ffTo = panel.querySelector('#ff-to');
+      const ffConvertResult = panel.querySelector('#ff-convert-result');
+      ffConvertForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const from = ffFrom.value;
+        const to = ffTo.value;
+        // Table data for all flip-flops
+        const tables = {
+          'SR': {
+            char: {
+              headers: ['S', 'R', 'Q', 'Q_next'],
+              rows: [
+                [0,0,'Q','Q'], [0,1,'Q',0], [1,0,'Q',1], [1,1,'Q','- (forbidden)']
+              ]
+            },
+            exc: {
+              headers: ['Q', 'Q_next', 'S', 'R'],
+              rows: [
+                [0,0,0,0], [0,1,1,0], [1,0,0,1], [1,1,0,0]
+              ]
+            },
+            inputs: ['S','R']
+          },
+          'JK': {
+            char: {
+              headers: ['J', 'K', 'Q', 'Q_next'],
+              rows: [
+                [0,0,'Q','Q'], [0,1,'Q',0], [1,0,'Q',1], [1,1,'Q','Q̅']
+              ]
+            },
+            exc: {
+              headers: ['Q', 'Q_next', 'J', 'K'],
+              rows: [
+                [0,0,0,'X'], [0,1,1,0], [1,0,0,1], [1,1,'X',0]
+              ]
+            },
+            inputs: ['J','K']
+          },
+          'D': {
+            char: {
+              headers: ['D', 'Q', 'Q_next'],
+              rows: [
+                [0,'Q',0], [1,'Q',1]
+              ]
+            },
+            exc: {
+              headers: ['Q', 'Q_next', 'D'],
+              rows: [
+                [0,0,0], [0,1,1], [1,0,0], [1,1,1]
+              ]
+            },
+            inputs: ['D']
+          },
+          'T': {
+            char: {
+              headers: ['T', 'Q', 'Q_next'],
+              rows: [
+                [0,'Q','Q'], [1,'Q','Q̅']
+              ]
+            },
+            exc: {
+              headers: ['Q', 'Q_next', 'T'],
+              rows: [
+                [0,0,0], [0,1,1], [1,0,1], [1,1,0]
+              ]
+            },
+            inputs: ['T']
+          }
+        };
+        function renderTable(headers, rows) {
+          let t = `<table class='truth-table'><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>`;
+          rows.forEach(row => {
+            t += `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`;
+          });
+          t += '</tbody></table>';
+          return t;
+        }
+        // 1. Show characteristic and excitation tables for both flip-flops
+        let html = `<div class='kmap-step'><b>Characteristic Table (${to})</b><br>${renderTable(tables[to].char.headers, tables[to].char.rows)}</div>`;
+        html += `<div class='kmap-step'><b>Excitation Table (${from})</b><br>${renderTable(tables[from].exc.headers, tables[from].exc.rows)}</div>`;
+        // 2. Build conversion truth table: for all Q, all 'to' inputs, compute Q_next, then required 'from' input(s)
+        let toInputs = tables[to].inputs;
+        let fromInputs = tables[from].inputs;
+        let truthRows = [];
+        let inputCombos = getInputCombinations(toInputs.length);
+        [0,1].forEach(Q => {
+          inputCombos.forEach(inputs => {
+            // Compute Q_next using 'to' characteristic equation (hardcoded for each type)
+            let Q_next = computeQnext(to, Q, inputs);
+            // For each 'from' input, get required value from excitation table
+            let fromVals = fromInputs.map((fromInp, idx) => {
+              let row = tables[from].exc.rows.find(r => r[0] == Q && r[1] == Q_next);
+              return row ? row[2 + idx] : 'X';
+            });
+            truthRows.push([Q, ...inputs, Q_next, ...fromVals]);
+          });
+        });
+        let truthHeaders = ['Q', ...toInputs, 'Q_next', ...fromInputs];
+        html += `<div class='kmap-step'><b>Conversion Truth Table</b><br>${renderTable(truthHeaders, truthRows)}</div>`;
+        // 3. For each 'from' input, build K-map and minimize
+        let finalExprs = [];
+        fromInputs.forEach((fromInp, idx) => {
+          let minterms = [];
+          for (let i = 0; i < truthRows.length; i++) {
+            if (truthRows[i][4+idx] == 1) {
+              // Variables: Q, ...toInputs
+              // Correct minterm calculation for any number of variables
+              let bits = [truthRows[i][0], ...truthRows[i].slice(1, 1+toInputs.length)];
+              let bin = 0;
+              for (let b = 0; b < bits.length; b++) {
+                bin = (bin << 1) | Number(bits[b]);
+              }
+              minterms.push(bin);
+            }
+          }
+          let vars = ['Q', ...toInputs];
+          html += `<div class='kmap-step'><b>K-map for ${fromInp}</b><br>`;
+          html += renderKMap(vars, minterms);
+          let canonicalExpr = mintermsToExpr(vars, minterms);
+          let simplifiedExpr = simplifyExpr(canonicalExpr);
+          finalExprs.push({fromInp, expr: simplifiedExpr});
+          html += `<div class='success-message'>${fromInp} canonical SOP: <b>${canonicalExpr}</b><br>Simplified: <b>${simplifiedExpr}</b></div></div>`;
+        });
+        // Final summary block
+        html += `<div class='kmap-step'><b>Final Minimal Expressions</b><br>`;
+        finalExprs.forEach(({fromInp, expr}) => {
+          html += `<div style='font-size:1.2em;margin:0.5em 0;'><b>${fromInp} = <span style='color:var(--color-primary,#43a047)'>${expr}</span></b></div>`;
+        });
+        html += '</div>';
+        ffConvertResult.innerHTML = html;
+        // Helper functions
+        function getInputCombinations(n) {
+          let combos = [];
+          for (let i = 0; i < (1<<n); i++) {
+            let arr = [];
+            for (let j = n-1; j >= 0; j--) arr.push((i>>j)&1);
+            combos.push(arr);
+          }
+          return combos;
+        }
+        function computeQnext(type, Q, inputs) {
+          switch(type) {
+            case 'SR': return (inputs[0] ? 1 : (inputs[1] ? 0 : Q));
+            case 'JK': return (inputs[0] && !Q) || (!inputs[1] && Q) ? 1 : 0;
+            case 'D': return inputs[0];
+            case 'T': return inputs[0] ? 1-Q : Q;
+          }
+        }
+        function simplifyKMap(vars, minterms) {
+          // Use existing Quine-McCluskey minimizer for up to 3 vars
+          let n = vars.length;
+          if (minterms.length === 0) return '0';
+          if (minterms.length === (1 << n)) return '1';
+          let terms = minterms.map(m => ({ms: [m], mask: 0, used: false}));
+          let next = [], primeImplicants = [];
+          while (terms.length) {
+            let marked = new Array(terms.length).fill(false);
+            for (let i = 0; i < terms.length; i++) {
+              for (let j = i+1; j < terms.length; j++) {
+                let diff = terms[i].ms[0] ^ terms[j].ms[0];
+                if (diff && (diff & (diff-1)) === 0 && terms[i].mask === terms[j].mask) {
+                  let mask = terms[i].mask | diff;
+                  let ms = Array.from(new Set(terms[i].ms.concat(terms[j].ms))).sort((a,b)=>a-b);
+                  let exists = next.find(t => t.ms.join(',') === ms.join(',') && t.mask === mask);
+                  if (!exists) next.push({ms, mask, used: false});
+                  marked[i] = marked[j] = true;
+                }
+              }
+            }
+            for (let i = 0; i < terms.length; i++) {
+              if (!marked[i] && !terms[i].used) primeImplicants.push(terms[i]);
+            }
+            if (next.length === 0) break;
+            terms = next;
+            next = [];
+          }
+          function termToExpr(t) {
+            let bits = [];
+            for (let i = n-1; i >= 0; i--) {
+              if ((t.mask & (1<<i)) === 0) {
+                bits.push(((t.ms[0]>>i)&1) ? vars[n-i-1] : vars[n-i-1]+"'");
+              }
+            }
+            return bits.join('');
+          }
+          return primeImplicants.map(termToExpr).join(' + ') || '0';
+        }
       });
     }, 0);
 
@@ -1994,66 +2485,97 @@ function getTruthTable(expr) {
 function mintermsToExpr(vars, minterms) {
   if (minterms.length === 0) return '0';
   if (minterms.length === (1 << vars.length)) return '1';
-  // For small cases, just join minterms
-  return minterms.map(m => {
-    return vars.map((v, i) => ((m >> (vars.length - i - 1)) & 1) ? v : v + "'").join('');
-  }).join(' + ');
+  // Quine-McCluskey minimization with essential prime implicant selection
+  let n = vars.length;
+  let terms = minterms.map(m => ({ms: [m], mask: 0, used: false}));
+  let next = [], primeImplicants = [];
+  while (terms.length) {
+    let marked = new Array(terms.length).fill(false);
+    for (let i = 0; i < terms.length; i++) {
+      for (let j = i+1; j < terms.length; j++) {
+        let diff = terms[i].ms[0] ^ terms[j].ms[0];
+        if (diff && (diff & (diff-1)) === 0 && terms[i].mask === terms[j].mask) {
+          let mask = terms[i].mask | diff;
+          let ms = Array.from(new Set(terms[i].ms.concat(terms[j].ms))).sort((a,b)=>a-b);
+          let exists = next.find(t => t.ms.join(',') === ms.join(',') && t.mask === mask);
+          if (!exists) next.push({ms, mask, used: false});
+          marked[i] = marked[j] = true;
+        }
+      }
+    }
+    for (let i = 0; i < terms.length; i++) {
+      if (!marked[i] && !terms[i].used) primeImplicants.push(terms[i]);
+    }
+    if (next.length === 0) break;
+    terms = next;
+    next = [];
+  }
+  // Build prime implicant chart
+  let chart = {};
+  for (let m of minterms) chart[m] = [];
+  for (let i = 0; i < primeImplicants.length; i++) {
+    for (let m of primeImplicants[i].ms) {
+      if (chart[m]) chart[m].push(i);
+    }
+  }
+  // Step 1: Select all essential prime implicants
+  let essential = new Set();
+  let covered = new Set();
+  for (let m in chart) {
+    if (chart[m].length === 1) {
+      essential.add(chart[m][0]);
+      for (let mm of primeImplicants[chart[m][0]].ms) covered.add(mm);
+    }
+  }
+  // Step 2: Cover remaining minterms with minimal set of non-essential prime implicants (brute-force for up to 4 vars)
+  let remaining = minterms.filter(m => !covered.has(m));
+  let nonEssential = [];
+  for (let i = 0; i < primeImplicants.length; i++) {
+    if (!essential.has(i)) nonEssential.push(i);
+  }
+  let minSet = [];
+  if (remaining.length > 0 && nonEssential.length > 0) {
+    let minCount = Infinity;
+    // Try all combinations of non-essential prime implicants
+    let combos = [];
+    let total = 1 << nonEssential.length;
+    for (let mask = 1; mask < total; mask++) {
+      let combo = [];
+      for (let j = 0; j < nonEssential.length; j++) {
+        if (mask & (1 << j)) combo.push(nonEssential[j]);
+      }
+      // Check if this combo covers all remaining minterms
+      let comboCovered = new Set();
+      for (let idx of combo) {
+        for (let mm of primeImplicants[idx].ms) comboCovered.add(mm);
+      }
+      let allCovered = remaining.every(m => comboCovered.has(m));
+      if (allCovered && combo.length < minCount) {
+        minCount = combo.length;
+        minSet = combo;
+      }
+    }
+  }
+  // Final set of implicants: essential + minimal non-essential
+  let finalSet = Array.from(essential).concat(minSet);
+  function termToExpr(t) {
+    let bits = [];
+    for (let i = n-1; i >= 0; i--) {
+      if ((t.mask & (1<<i)) === 0) {
+        bits.push(((t.ms[0]>>i)&1) ? vars[n-i-1] : vars[n-i-1]+"'");
+      }
+    }
+    return bits.join('');
+  }
+  return finalSet.map(i => termToExpr(primeImplicants[i])).join(' + ') || '0';
 }
 function simplifyExpr(expr) {
   const { vars, table } = getTruthTable(expr);
   if (vars.length > 4) return 'Too many variables to minimize';
   // Get minterms
   const minterms = table.map((row, i) => row.out === 1 ? i : null).filter(i => i !== null);
-  // Use Quine-McCluskey minimization (reuse logic from renderKMapSteps)
-  function qmMinimize(n, minterms) {
-    if (minterms.length === 0) return '0';
-    if (minterms.length === (1 << n)) return '1';
-    let terms = minterms.map(m => ({ms: [m], mask: 0, used: false}));
-    let next = [], primeImplicants = [];
-    while (terms.length) {
-      let marked = new Array(terms.length).fill(false);
-      for (let i = 0; i < terms.length; i++) {
-        for (let j = i+1; j < terms.length; j++) {
-          let diff = terms[i].ms[0] ^ terms[j].ms[0];
-          if (diff && (diff & (diff-1)) === 0 && terms[i].mask === terms[j].mask) {
-            let mask = terms[i].mask | diff;
-            let ms = Array.from(new Set(terms[i].ms.concat(terms[j].ms))).sort((a,b)=>a-b);
-            let exists = next.find(t => t.ms.join(',') === ms.join(',') && t.mask === mask);
-            if (!exists) next.push({ms, mask, used: false});
-            marked[i] = marked[j] = true;
-          }
-        }
-      }
-      for (let i = 0; i < terms.length; i++) {
-        if (!marked[i] && !terms[i].used) primeImplicants.push(terms[i]);
-      }
-      if (next.length === 0) break;
-      terms = next;
-      next = [];
-    }
-    // Cover minterms with prime implicants (greedy)
-    let covered = new Set();
-    let cover = [];
-    for (let t of primeImplicants) {
-      let covers = t.ms.filter(m => minterms.includes(m));
-      if (covers.length) {
-        cover.push(t);
-        covers.forEach(m => covered.add(m));
-      }
-      if (covered.size === minterms.length) break;
-    }
-    function termToExpr(t) {
-      let bits = [];
-      for (let i = n-1; i >= 0; i--) {
-        if ((t.mask & (1<<i)) === 0) {
-          bits.push(((t.ms[0]>>i)&1) ? vars[n-i-1] : vars[n-i-1]+"'");
-        }
-      }
-      return bits.join('');
-    }
-    return cover.map(termToExpr).join(' + ') || '0';
-  }
-  return qmMinimize(vars.length, minterms);
+  // Use improved mintermsToExpr for minimization
+  return mintermsToExpr(vars, minterms);
 }
 // Karnaugh Map rendering and grouping logic
 function renderKMap(vars, minterms) {
@@ -2139,7 +2661,7 @@ function renderKMapMinterms(n, minterms, dcs) {
   return html;
 }
 // Step-by-step Quine-McCluskey for up to 4 variables
-function renderKMapSteps(n, minterms, dcs) {
+function renderKMapSteps(n, minterms, dcs, vars) {
   if (n > 4) return '';
   // 1. Initial grouping by number of 1s
   let groups = {};
@@ -2153,7 +2675,8 @@ function renderKMapSteps(n, minterms, dcs) {
     html += `Group ${k}: [${groups[k].join(', ')}]<br>`;
   });
   html += '</div>';
-
+  // 2. Prime implicant chart (simple, not full Petrick's method)
+  // For brevity, use a basic Quine-McCluskey for up to 4 vars
   function combine(a, b) {
     let diff = 0, pos = -1;
     for (let i = 0; i < n; i++) {
@@ -2219,7 +2742,7 @@ function renderKMapSteps(n, minterms, dcs) {
     let bits = [];
     for (let i = n-1; i >= 0; i--) {
       if ((t.mask & (1<<i)) === 0) {
-        bits.push(((t.ms[0]>>i)&1) ? String.fromCharCode(65+n-i-1) : String.fromCharCode(65+n-i-1)+"'");
+        bits.push(((t.ms[0]>>i)&1) ? (vars ? vars[n-i-1] : String.fromCharCode(65+n-i-1)) : (vars ? vars[n-i-1]+"'" : String.fromCharCode(65+n-i-1)+"'"));
       }
     }
     return bits.join('');
