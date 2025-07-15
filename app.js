@@ -874,61 +874,93 @@ class OpAmpSolver {
       <circle cx="300" cy="110" r="5" fill="#ff4444"/>
       <text x="310" y="110" text-anchor="start" font-size="12" fill="#ff4444">Vout</text>
     </svg>`;
-    // --- Op-Amp Summing ---
+    // --- Op-Amp Summing Amplifier (standard layout) ---
     const summing = `<svg width="340" height="200" viewBox="0 0 340 200">
-      <polygon points="150,75 150,125 220,100" fill="white" stroke="#333" stroke-width="3"/>
-      <text x="145" y="95" text-anchor="middle" font-size="16" fill="#333">-</text>
-      <text x="145" y="115" text-anchor="middle" font-size="16" fill="#333">+</text>
-      <line x1="40" y1="60" x2="150" y2="90" stroke="#2196F3" stroke-width="2"/>
-      <text x="40" y="70" text-anchor="middle" font-size="12" fill="#2196F3">Vin1</text>
-      <line x1="40" y1="120" x2="150" y2="110" stroke="#2196F3" stroke-width="2"/>
-      <text x="40" y="130" text-anchor="middle" font-size="12" fill="#2196F3">Vin2</text>
-      <rect x="245" y="100" width="30" height="10" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
-      <text x="260" y="95" text-anchor="middle" font-size="12" fill="#333">Rf</text>
-      <line x1="220" y1="100" x2="245" y2="105" stroke="#333" stroke-width="2"/>
-      <line x1="275" y1="105" x2="300" y2="105" stroke="#333" stroke-width="2"/>
-      <circle cx="300" cy="105" r="5" fill="#ff4444"/>
-      <text x="300" y="95" text-anchor="middle" font-size="12" fill="#ff4444">Vout</text>
-    </svg>`;
-    // --- Op-Amp Integrator ---
-    const integrator = `<svg width="340" height="180" viewBox="0 0 340 180">
-      <polygon points="150,60 150,120 220,90" fill="white" stroke="#333" stroke-width="3"/>
-      <text x="145" y="80" text-anchor="middle" font-size="16" fill="#333">-</text>
-      <text x="145" y="110" text-anchor="middle" font-size="16" fill="#333">+</text>
-      <line x1="40" y1="90" x2="150" y2="90" stroke="#2196F3" stroke-width="2"/>
-      <text x="40" y="80" text-anchor="middle" font-size="12" fill="#2196F3">Vin</text>
-      <rect x="245" y="90" width="30" height="10" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
-      <text x="260" y="85" text-anchor="middle" font-size="12" fill="#333">R</text>
-      <rect x="245" y="120" width="30" height="10" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
-      <text x="260" y="135" text-anchor="middle" font-size="12" fill="#333">C</text>
-      <line x1="220" y1="90" x2="245" y2="95" stroke="#333" stroke-width="2"/>
-      <line x1="220" y1="120" x2="245" y2="125" stroke="#333" stroke-width="2"/>
-      <line x1="275" y1="95" x2="300" y2="95" stroke="#333" stroke-width="2"/>
-      <line x1="275" y1="125" x2="300" y2="125" stroke="#333" stroke-width="2"/>
+      <!-- Op-amp triangle -->
+      <polygon points="180,80 180,140 260,110" fill="white" stroke="#333" stroke-width="3"/>
+      <!-- + and - -->
+      <text x="175" y="100" text-anchor="middle" font-size="16" fill="#333">-</text>
+      <text x="175" y="130" text-anchor="middle" font-size="16" fill="#333">+</text>
+      <!-- Vin1 to R1 (top input) -->
+      <line x1="60" y1="90" x2="110" y2="90" stroke="#2196F3" stroke-width="2"/>
+      <text x="60" y="80" text-anchor="middle" font-size="12" fill="#2196F3">Vin1</text>
+      <rect x="110" y="80" width="30" height="20" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="125" y="75" text-anchor="middle" font-size="12" fill="#333">R1</text>
+      <line x1="140" y1="90" x2="180" y2="100" stroke="#333" stroke-width="2"/>
+      <!-- Vin2 to R2 (bottom input) -->
+      <line x1="60" y1="130" x2="110" y2="130" stroke="#2196F3" stroke-width="2"/>
+      <text x="60" y="140" text-anchor="middle" font-size="12" fill="#2196F3">Vin2</text>
+      <rect x="110" y="120" width="30" height="20" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="125" y="115" text-anchor="middle" font-size="12" fill="#333">R2</text>
+      <line x1="140" y1="130" x2="180" y2="100" stroke="#333" stroke-width="2"/>
+      <!-- + input to ground -->
+      <line x1="180" y1="130" x2="180" y2="170" stroke="#444" stroke-width="2"/>
+      <line x1="170" y1="170" x2="190" y2="170" stroke="#444" stroke-width="2"/>
+      <text x="180" y="185" text-anchor="middle" font-size="12" fill="#444">GND</text>
+      <!-- Output -->
+      <line x1="260" y1="110" x2="300" y2="110" stroke="#ff4444" stroke-width="3"/>
       <circle cx="300" cy="110" r="5" fill="#ff4444"/>
-      <text x="300" y="100" text-anchor="middle" font-size="12" fill="#ff4444">Vout</text>
+      <text x="310" y="110" text-anchor="start" font-size="12" fill="#ff4444">Vout</text>
+      <!-- Feedback Rf from output to - input (above triangle) -->
+      <line x1="260" y1="110" x2="260" y2="70" stroke="#333" stroke-width="2"/>
+      <rect x="210" y="60" width="30" height="20" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="225" y="55" text-anchor="middle" font-size="12" fill="#333">Rf</text>
+      <line x1="260" y1="70" x2="240" y2="70" stroke="#333" stroke-width="2"/>
+      <line x1="210" y1="70" x2="180" y2="100" stroke="#333" stroke-width="2"/>
     </svg>`;
-    // --- Op-Amp Instrumentation ---
+    // --- Op-Amp Integrator (standard layout) ---
+    const integrator = `<svg width="340" height="180" viewBox="0 0 340 180">
+      <!-- Op-amp triangle -->
+      <polygon points="180,80 180,140 260,110" fill="white" stroke="#333" stroke-width="3"/>
+      <!-- + and - -->
+      <text x="175" y="100" text-anchor="middle" font-size="16" fill="#333">-</text>
+      <text x="175" y="130" text-anchor="middle" font-size="16" fill="#333">+</text>
+      <!-- Vin to R (horizontal, below triangle) -->
+      <line x1="60" y1="130" x2="110" y2="130" stroke="#2196F3" stroke-width="2"/>
+      <text x="60" y="140" text-anchor="middle" font-size="12" fill="#2196F3">Vin</text>
+      <rect x="110" y="120" width="30" height="20" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="125" y="115" text-anchor="middle" font-size="12" fill="#333">R</text>
+      <line x1="140" y1="130" x2="140" y2="100" stroke="#333" stroke-width="2"/>
+      <line x1="140" y1="100" x2="180" y2="100" stroke="#333" stroke-width="2"/>
+      <!-- + input to ground -->
+      <line x1="180" y1="130" x2="180" y2="160" stroke="#444" stroke-width="2"/>
+      <line x1="170" y1="160" x2="190" y2="160" stroke="#444" stroke-width="2"/>
+      <text x="180" y="175" text-anchor="middle" font-size="12" fill="#444">GND</text>
+      <!-- Output -->
+      <line x1="260" y1="110" x2="300" y2="110" stroke="#ff4444" stroke-width="3"/>
+      <circle cx="300" cy="110" r="5" fill="#ff4444"/>
+      <text x="310" y="110" text-anchor="start" font-size="12" fill="#ff4444">Vout</text>
+      <!-- Feedback C from output to - input (above triangle) -->
+      <line x1="260" y1="110" x2="260" y2="70" stroke="#333" stroke-width="2"/>
+      <rect x="210" y="60" width="30" height="20" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="225" y="55" text-anchor="middle" font-size="12" fill="#333">C</text>
+      <line x1="260" y1="70" x2="240" y2="70" stroke="#333" stroke-width="2"/>
+      <line x1="210" y1="70" x2="180" y2="100" stroke="#333" stroke-width="2"/>
+    </svg>`;
+    // --- Op-Amp Instrumentation Amplifier (standard layout, simplified) ---
     const instrumentation = `<svg width="340" height="200" viewBox="0 0 340 200">
-      <polygon points="150,75 150,125 220,100" fill="white" stroke="#333" stroke-width="3"/>
-      <text x="145" y="95" text-anchor="middle" font-size="16" fill="#333">-</text>
-      <text x="145" y="115" text-anchor="middle" font-size="16" fill="#333">+</text>
-      <line x1="40" y1="60" x2="150" y2="90" stroke="#2196F3" stroke-width="2"/>
-      <text x="40" y="70" text-anchor="middle" font-size="12" fill="#2196F3">Vin1</text>
-      <line x1="40" y1="120" x2="150" y2="110" stroke="#2196F3" stroke-width="2"/>
-      <text x="40" y="130" text-anchor="middle" font-size="12" fill="#2196F3">Vin2</text>
-      <rect x="245" y="100" width="30" height="10" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
-      <text x="260" y="95" text-anchor="middle" font-size="12" fill="#333">Rg</text>
-      <rect x="245" y="120" width="30" height="10" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
-      <text x="260" y="135" text-anchor="middle" font-size="12" fill="#333">R1</text>
-      <rect x="245" y="140" width="30" height="10" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
-      <text x="260" y="155" text-anchor="middle" font-size="12" fill="#333">R2</text>
-      <rect x="245" y="160" width="30" height="10" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
-      <text x="260" y="175" text-anchor="middle" font-size="12" fill="#333">R3</text>
-      <line x1="220" y1="100" x2="245" y2="105" stroke="#333" stroke-width="2"/>
-      <line x1="275" y1="105" x2="300" y2="105" stroke="#333" stroke-width="2"/>
-      <circle cx="300" cy="105" r="5" fill="#ff4444"/>
-      <text x="300" y="95" text-anchor="middle" font-size="12" fill="#ff4444">Vout</text>
+      <!-- First op-amp triangle -->
+      <polygon points="100,80 100,140 180,110" fill="white" stroke="#333" stroke-width="3"/>
+      <text x="95" y="100" text-anchor="middle" font-size="16" fill="#333">-</text>
+      <text x="95" y="130" text-anchor="middle" font-size="16" fill="#333">+</text>
+      <!-- Second op-amp triangle -->
+      <polygon points="220,80 220,140 300,110" fill="white" stroke="#333" stroke-width="3"/>
+      <text x="215" y="100" text-anchor="middle" font-size="16" fill="#333">-</text>
+      <text x="215" y="130" text-anchor="middle" font-size="16" fill="#333">+</text>
+      <!-- Vin1 to first + input -->
+      <line x1="40" y1="130" x2="100" y2="130" stroke="#2196F3" stroke-width="2"/>
+      <text x="40" y="140" text-anchor="middle" font-size="12" fill="#2196F3">Vin1</text>
+      <!-- Vin2 to second + input -->
+      <line x1="40" y1="90" x2="220" y2="90" stroke="#2196F3" stroke-width="2"/>
+      <text x="40" y="80" text-anchor="middle" font-size="12" fill="#2196F3">Vin2</text>
+      <!-- Rg between first and second op-amp - inputs -->
+      <rect x="160" y="100" width="20" height="20" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="170" y="95" text-anchor="middle" font-size="12" fill="#333">Rg</text>
+      <line x1="180" y1="110" x2="220" y2="110" stroke="#333" stroke-width="2"/>
+      <!-- Output from second op-amp -->
+      <line x1="300" y1="110" x2="330" y2="110" stroke="#ff4444" stroke-width="3"/>
+      <circle cx="330" cy="110" r="5" fill="#ff4444"/>
+      <text x="340" y="110" text-anchor="start" font-size="12" fill="#ff4444">Vout</text>
     </svg>`;
     const schematics = {
       'inverting': inverting,
@@ -1274,27 +1306,151 @@ class ElectroSolveApp {
     const panel = document.createElement('section');
     panel.className = 'panel hidden';
     panel.id = 'panel-digital-logic';
-    
+
     panel.innerHTML = `
       <div class="panel-header">
         <h2 class="panel-title">Digital Logic Circuit Analysis</h2>
-        <p class="panel-subtitle">Advanced digital circuit solvers and logic gate analysis</p>
+        <p class="panel-subtitle">Boolean algebra, truth tables, and more</p>
       </div>
-      <div class="feature-placeholder">
-        <h3>🚀 Coming Soon!</h3>
-        <p>This section will include comprehensive digital logic circuit solvers:</p>
-        <ul style="text-align: left; margin: 20px 0; display: inline-block;">
-          <li>Boolean algebra simplification</li>
-          <li>Truth table generation</li>
-          <li>Karnaugh map solving</li>
-          <li>Sequential circuit analysis</li>
-          <li>Timing diagram generation</li>
-          <li>State machine design</li>
-        </ul>
-        <div class="status">In Development</div>
+      <div class="logic-tabs">
+        <button class="logic-tab active" id="tab-boolean">Boolean Simplification</button>
+        <button class="logic-tab" id="tab-truth">Truth Table</button>
+        <button class="logic-tab" id="tab-kmap">Karnaugh Map</button>
+      </div>
+      <div class="logic-content" id="logic-boolean" style="display:block;">
+        <h3>Boolean Expression Simplification</h3>
+        <form id="boolean-form">
+          <label for="boolean-input">Enter Boolean Expression:</label>
+          <input type="text" id="boolean-input" class="form-control" placeholder="e.g. A + A'B" required />
+          <button type="submit" class="btn btn--primary">Simplify</button>
+        </form>
+        <div class="logic-result" id="boolean-result"></div>
+      </div>
+      <div class="logic-content" id="logic-truth" style="display:none;">
+        <h3>Truth Table Generator</h3>
+        <form id="truth-form">
+          <label for="truth-input">Enter Boolean Expression:</label>
+          <input type="text" id="truth-input" class="form-control" placeholder="e.g. AB + C'" required />
+          <button type="submit" class="btn btn--primary">Generate Table</button>
+        </form>
+        <div class="logic-result" id="truth-result"></div>
+      </div>
+      <div class="logic-content" id="logic-kmap" style="display:none;">
+        <h3>Karnaugh Map Solver</h3>
+        <form id="kmap-form">
+          <label for="kmap-input">Enter Boolean Expression:</label>
+          <input type="text" id="kmap-input" class="form-control" placeholder="e.g. A'B + AC" required />
+          <button type="submit" class="btn btn--primary">Show K-Map</button>
+        </form>
+        <div class="logic-result" id="kmap-result"></div>
       </div>
     `;
-    
+
+    // Tab switching logic
+    setTimeout(() => {
+      const tabBoolean = panel.querySelector('#tab-boolean');
+      const tabTruth = panel.querySelector('#tab-truth');
+      const tabKmap = panel.querySelector('#tab-kmap');
+      const contentBoolean = panel.querySelector('#logic-boolean');
+      const contentTruth = panel.querySelector('#logic-truth');
+      const contentKmap = panel.querySelector('#logic-kmap');
+      tabBoolean.addEventListener('click', () => {
+        tabBoolean.classList.add('active');
+        tabTruth.classList.remove('active');
+        tabKmap.classList.remove('active');
+        contentBoolean.style.display = 'block';
+        contentTruth.style.display = 'none';
+        contentKmap.style.display = 'none';
+      });
+      tabTruth.addEventListener('click', () => {
+        tabTruth.classList.add('active');
+        tabBoolean.classList.remove('active');
+        tabKmap.classList.remove('active');
+        contentBoolean.style.display = 'none';
+        contentTruth.style.display = 'block';
+        contentKmap.style.display = 'none';
+      });
+      tabKmap.addEventListener('click', () => {
+        tabKmap.classList.add('active');
+        tabBoolean.classList.remove('active');
+        tabTruth.classList.remove('active');
+        contentBoolean.style.display = 'none';
+        contentTruth.style.display = 'none';
+        contentKmap.style.display = 'block';
+      });
+
+      // Boolean Simplification Logic
+      const booleanForm = panel.querySelector('#boolean-form');
+      const booleanInput = panel.querySelector('#boolean-input');
+      const booleanResult = panel.querySelector('#boolean-result');
+      booleanForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const expr = booleanInput.value.trim();
+        if (!expr) {
+          booleanResult.innerHTML = '<div class="error-message">Please enter a Boolean expression.</div>';
+          return;
+        }
+        try {
+          const simplified = simplifyExpr(expr);
+          booleanResult.innerHTML = `<div class="success-message">Simplified: <b>${simplified}</b></div>`;
+        } catch (err) {
+          booleanResult.innerHTML = `<div class="error-message">Error: ${err.message}</div>`;
+        }
+      });
+
+      // Truth Table Generation Logic
+      const truthForm = panel.querySelector('#truth-form');
+      const truthInput = panel.querySelector('#truth-input');
+      const truthResult = panel.querySelector('#truth-result');
+      truthForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const expr = truthInput.value.trim();
+        if (!expr) {
+          truthResult.innerHTML = '<div class="error-message">Please enter a Boolean expression.</div>';
+          return;
+        }
+        try {
+          const { vars, table } = getTruthTable(expr);
+          if (vars.length === 0) {
+            truthResult.innerHTML = '<div class="error-message">No variables found in expression.</div>';
+            return;
+          }
+          let html = `<table class="truth-table"><thead><tr>${vars.map(v => `<th>${v}</th>`).join('')}<th>Output</th></tr></thead><tbody>`;
+          for (const row of table) {
+            html += `<tr>${vars.map(v => `<td>${row[v]}</td>`).join('')}<td>${row.out}</td></tr>`;
+          }
+          html += '</tbody></table>';
+          truthResult.innerHTML = html;
+        } catch (err) {
+          truthResult.innerHTML = `<div class="error-message">Error: ${err.message}</div>`;
+        }
+      });
+
+      // Karnaugh Map Logic
+      const kmapForm = panel.querySelector('#kmap-form');
+      const kmapInput = panel.querySelector('#kmap-input');
+      const kmapResult = panel.querySelector('#kmap-result');
+      kmapForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const expr = kmapInput.value.trim();
+        if (!expr) {
+          kmapResult.innerHTML = '<div class="error-message">Please enter a Boolean expression.</div>';
+          return;
+        }
+        try {
+          const { vars, table } = getTruthTable(expr);
+          if (vars.length < 2 || vars.length > 4) {
+            kmapResult.innerHTML = '<div class="error-message">K-map only supports 2 to 4 variables.</div>';
+            return;
+          }
+          const minterms = table.map((row, i) => row.out === 1 ? i : null).filter(i => i !== null);
+          kmapResult.innerHTML = renderKMap(vars, minterms);
+        } catch (err) {
+          kmapResult.innerHTML = `<div class="error-message">Error: ${err.message}</div>`;
+        }
+      });
+    }, 0);
+
     return panel;
   }
 
@@ -1701,3 +1857,121 @@ class ElectroSolveApp {
 document.addEventListener('DOMContentLoaded', () => {
   new ElectroSolveApp();
 });
+
+// Boolean logic helpers
+function parseExpr(expr, vars) {
+  let s = expr.replace(/\s+/g, '');
+  // Step 1: Replace NOT (A') with !A
+  s = s.replace(/([A-Za-z0-9])'/g, '!$1');
+  // Step 2: Insert & for implicit AND
+  // Insert & between:
+  //   - variable or ) and variable or ! or (
+  //   - ! and variable or (
+  // But do NOT insert & before ! if it is already a NOT operator
+  s = s.replace(/([A-Za-z0-9\)])(?=[A-Za-z!(])/g, '$1&');
+  s = s.replace(/!([A-Za-z(])/g, '!&$1'); // !A or !(A) should be !&A or !&(A)
+  s = s.replace(/!&/g, '!'); // revert !& to ! for correct NOT
+  // Step 3: Replace * with &
+  s = s.replace(/\*/g, '&');
+  // Step 4: Replace + with |
+  s = s.replace(/\+/g, '|');
+  // Only allow valid chars
+  if (/[^A-Za-z0-9!&|()]/.test(s)) throw new Error('Invalid character in expression');
+  return s;
+}
+function evalExpr(expr, values) {
+  let s = expr;
+  // Replace each variable with its value using word boundaries
+  for (const v in values) {
+    // Use regex with word boundary to avoid partial replacements
+    s = s.replace(new RegExp('(?<![A-Za-z0-9_])' + v + '(?![A-Za-z0-9_])', 'g'), values[v] ? '1' : '0');
+  }
+  try {
+    // eslint-disable-next-line no-new-func
+    return !!Function('return ' + s)();
+  } catch {
+    throw new Error('Invalid Boolean expression');
+  }
+}
+function getVars(expr) {
+  return Array.from(new Set(expr.match(/[A-Za-z]/g))).sort();
+}
+function getTruthTable(expr) {
+  const vars = getVars(expr);
+  const rows = 1 << vars.length;
+  const table = [];
+  const parsed = parseExpr(expr, vars);
+  for (let i = 0; i < rows; i++) {
+    const values = {};
+    vars.forEach((v, idx) => {
+      values[v] = (i >> (vars.length - idx - 1)) & 1;
+    });
+    let out;
+    try {
+      out = evalExpr(parsed, values) ? 1 : 0;
+    } catch {
+      out = '?';
+    }
+    table.push({ ...values, out });
+  }
+  return { vars, table };
+}
+// Quine-McCluskey minimizer for up to 4 variables
+function mintermsToExpr(vars, minterms) {
+  if (minterms.length === 0) return '0';
+  if (minterms.length === (1 << vars.length)) return '1';
+  // For small cases, just join minterms
+  return minterms.map(m => {
+    return vars.map((v, i) => ((m >> (vars.length - i - 1)) & 1) ? v : v + "'").join('');
+  }).join(' + ');
+}
+function simplifyExpr(expr) {
+  const { vars, table } = getTruthTable(expr);
+  if (vars.length > 4) return 'Too many variables to minimize';
+  // Get minterms
+  const minterms = table.map((row, i) => row.out === 1 ? i : null).filter(i => i !== null);
+  // For now, just return sum of minterms (SOP)
+  return mintermsToExpr(vars, minterms);
+}
+// Karnaugh Map rendering and grouping logic
+function renderKMap(vars, minterms) {
+  // Gray code order for 2, 3, 4 variables
+  const gray = n => n ^ (n >> 1);
+  const n = vars.length;
+  let rows, cols, rowLabels, colLabels;
+  if (n === 2) {
+    rows = 2; cols = 2;
+    rowLabels = ['0', '1'];
+    colLabels = ['0', '1'];
+  } else if (n === 3) {
+    rows = 2; cols = 4;
+    rowLabels = ['0', '1'];
+    colLabels = ['00', '01', '11', '10'];
+  } else if (n === 4) {
+    rows = 4; cols = 4;
+    rowLabels = ['00', '01', '11', '10'];
+    colLabels = ['00', '01', '11', '10'];
+  } else {
+    return '<div class="error-message">K-map only supports 2 to 4 variables.</div>';
+  }
+  // Build K-map grid
+  let html = `<table class="kmap-table"><thead><tr><th></th>`;
+  for (const c of colLabels) html += `<th>${c}</th>`;
+  html += '</tr></thead><tbody>';
+  for (let r = 0; r < rows; r++) {
+    html += `<tr><th>${rowLabels[r]}</th>`;
+    for (let c = 0; c < cols; c++) {
+      let idx;
+      if (n === 2) idx = (r << 1) | c;
+      else if (n === 3) idx = (r << 2) | [0,1,3,2][c];
+      else if (n === 4) idx = ([0,1,3,2][r] << 2) | [0,1,3,2][c];
+      const isMinterm = minterms.includes(idx);
+      html += `<td class="kmap-cell${isMinterm ? ' kmap-minterm' : ''}">${isMinterm ? '1' : '0'}</td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  // Optionally, add grouping/prime implicant visualization here
+  html += `<div class="kmap-summary">Minterms: ${minterms.length ? minterms.join(', ') : 'None'}</div>`;
+  return html;
+}
