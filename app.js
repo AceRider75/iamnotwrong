@@ -262,83 +262,184 @@ class BJTSolver {
   }
 
   static getSVG(biasType) {
+    const themeBlue = '#2196F3';
+    const themeRed = '#ff4444';
+    const themeGray = '#888';
+    const themeWire = '#333';
+    const themeResistor = '#FFC107';
+    const themeGround = '#444';
+    const themeVcc = '#43A047';
+    // Standard NPN transistor symbol (no extra lines)
+    const npnTransistor = `
+      <g>
+        <circle cx="0" cy="0" r="16" fill="white" stroke="#333" stroke-width="2"/>
+        <!-- Collector (top) -->
+        <line x1="0" y1="-16" x2="0" y2="-28" stroke="#333" stroke-width="2"/>
+        <!-- Emitter (bottom, with arrow) -->
+        <line x1="0" y1="16" x2="0" y2="32" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+        <!-- Base (left) -->
+        <line x1="-16" y1="0" x2="-28" y2="0" stroke="#333" stroke-width="2"/>
+        <!-- Internal base to emitter (inside circle only) -->
+        <line x1="-12" y1="0" x2="0" y2="12" stroke="#333" stroke-width="2"/>
+      </g>
+    `;
+    // Arrowhead marker for NPN emitter
+    const arrowMarker = `<defs><marker id="arrowhead" markerWidth="8" markerHeight="8" refX="0" refY="4" orient="auto" markerUnits="strokeWidth"><polygon points="0 0, 8 4, 0 8" fill="#2196F3"/></marker></defs>`;
+    // Standard base bias circuit
+    const baseBias = `<svg width="340" height="220" viewBox="0 0 340 220">
+      ${arrowMarker}
+      <!-- Vcc rail -->
+      <line x1="60" y1="40" x2="200" y2="40" stroke="#43A047" stroke-width="3"/>
+      <text x="50" y="35" font-size="12" fill="#43A047">VCC</text>
+      <!-- RB from Vcc to base -->
+      <rect x="110" y="40" width="20" height="40" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="120" y="55" text-anchor="middle" font-size="12" fill="#333">RB</text>
+      <line x1="120" y1="80" x2="120" y2="100" stroke="#333" stroke-width="2"/>
+      <!-- Base to transistor -->
+      <line x1="120" y1="100" x2="170" y2="100" stroke="#333" stroke-width="2"/>
+      <!-- RC from Vcc to collector -->
+      <rect x="180" y="40" width="20" height="40" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="190" y="55" text-anchor="middle" font-size="12" fill="#333">RC</text>
+      <line x1="190" y1="80" x2="190" y2="100" stroke="#333" stroke-width="2"/>
+      <!-- Collector to transistor -->
+      <line x1="190" y1="100" x2="170" y2="100" stroke="#333" stroke-width="2"/>
+      <!-- NPN transistor -->
+      <g transform="translate(170,100)">${npnTransistor}</g>
+      <!-- RE from emitter to ground -->
+      <rect x="160" y="160" width="20" height="40" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="170" y="185" text-anchor="middle" font-size="12" fill="#333">RE</text>
+      <line x1="170" y1="130" x2="170" y2="160" stroke="#333" stroke-width="2"/>
+      <!-- Emitter to ground -->
+      <line x1="170" y1="200" x2="170" y2="210" stroke="#444" stroke-width="3"/>
+      <line x1="160" y1="210" x2="180" y2="210" stroke="#444" stroke-width="3"/>
+      <line x1="163" y1="214" x2="177" y2="214" stroke="#444" stroke-width="2"/>
+      <line x1="166" y1="218" x2="174" y2="218" stroke="#444" stroke-width="2"/>
+      <text x="170" y="225" text-anchor="middle" font-size="12" fill="#444">GND</text>
+    </svg>`;
+    // Standard voltage divider bias circuit
+    const voltageDivider = `<svg width="340" height="240" viewBox="0 0 340 240">
+      ${arrowMarker}
+      <!-- Vcc rail -->
+      <line x1="60" y1="40" x2="200" y2="40" stroke="#43A047" stroke-width="3"/>
+      <text x="50" y="35" font-size="12" fill="#43A047">VCC</text>
+      <!-- R1 from Vcc to divider node -->
+      <rect x="110" y="40" width="20" height="40" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="120" y="55" text-anchor="middle" font-size="12" fill="#333">R1</text>
+      <line x1="120" y1="80" x2="120" y2="120" stroke="#333" stroke-width="2"/>
+      <!-- R2 from divider node to ground -->
+      <rect x="110" y="120" width="20" height="40" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="120" y="135" text-anchor="middle" font-size="12" fill="#333">R2</text>
+      <line x1="120" y1="160" x2="120" y2="210" stroke="#333" stroke-width="2"/>
+      <!-- Divider node to base -->
+      <line x1="120" y1="120" x2="170" y2="120" stroke="#333" stroke-width="2"/>
+      <!-- RC from Vcc to collector -->
+      <rect x="180" y="40" width="20" height="40" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="190" y="55" text-anchor="middle" font-size="12" fill="#333">RC</text>
+      <line x1="190" y1="80" x2="190" y2="120" stroke="#333" stroke-width="2"/>
+      <!-- Collector to transistor -->
+      <line x1="190" y1="120" x2="170" y2="120" stroke="#333" stroke-width="2"/>
+      <!-- NPN transistor -->
+      <g transform="translate(170,120)">${npnTransistor}</g>
+      <!-- RE from emitter to ground -->
+      <rect x="160" y="180" width="20" height="40" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="170" y="205" text-anchor="middle" font-size="12" fill="#333">RE</text>
+      <line x1="170" y1="150" x2="170" y2="180" stroke="#333" stroke-width="2"/>
+      <!-- Emitter to ground -->
+      <line x1="170" y1="220" x2="170" y2="230" stroke="#444" stroke-width="3"/>
+      <line x1="160" y1="230" x2="180" y2="230" stroke="#444" stroke-width="3"/>
+      <line x1="163" y1="234" x2="177" y2="234" stroke="#444" stroke-width="2"/>
+      <line x1="166" y1="238" x2="174" y2="238" stroke="#444" stroke-width="2"/>
+      <text x="170" y="245" text-anchor="middle" font-size="12" fill="#444">GND</text>
+    </svg>`;
+    // --- BJT Collector-Feedback Bias ---
+    const collectorFeedback = `<svg width="340" height="220" viewBox="0 0 340 220">
+      ${arrowMarker}
+      <line x1="60" y1="40" x2="200" y2="40" stroke="#43A047" stroke-width="3"/>
+      <text x="50" y="35" font-size="12" fill="#43A047">VCC</text>
+      <!-- RC from Vcc to collector -->
+      <rect x="180" y="40" width="20" height="40" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="190" y="55" text-anchor="middle" font-size="12" fill="#333">RC</text>
+      <line x1="190" y1="80" x2="190" y2="100" stroke="#333" stroke-width="2"/>
+      <!-- Collector to transistor -->
+      <line x1="190" y1="100" x2="170" y2="100" stroke="#333" stroke-width="2"/>
+      <!-- RB from collector to base -->
+      <rect x="120" y="80" width="20" height="40" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="130" y="95" text-anchor="middle" font-size="12" fill="#333">RB</text>
+      <line x1="130" y1="80" x2="190" y2="80" stroke="#333" stroke-width="2"/>
+      <line x1="130" y1="120" x2="130" y2="100" stroke="#333" stroke-width="2"/>
+      <line x1="130" y1="100" x2="170" y2="100" stroke="#333" stroke-width="2"/>
+      <!-- NPN transistor -->
+      <g transform="translate(170,100)">${npnTransistor}</g>
+      <!-- RE from emitter to ground -->
+      <rect x="160" y="160" width="20" height="40" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="170" y="185" text-anchor="middle" font-size="12" fill="#333">RE</text>
+      <line x1="170" y1="130" x2="170" y2="160" stroke="#333" stroke-width="2"/>
+      <!-- Emitter to ground -->
+      <line x1="170" y1="200" x2="170" y2="210" stroke="#444" stroke-width="3"/>
+      <line x1="160" y1="210" x2="180" y2="210" stroke="#444" stroke-width="3"/>
+      <line x1="163" y1="214" x2="177" y2="214" stroke="#444" stroke-width="2"/>
+      <line x1="166" y1="218" x2="174" y2="218" stroke="#444" stroke-width="2"/>
+      <text x="170" y="225" text-anchor="middle" font-size="12" fill="#444">GND</text>
+    </svg>`;
+    // --- BJT Emitter-Bias ---
+    const emitterBias = `<svg width="340" height="220" viewBox="0 0 340 220">
+      ${arrowMarker}
+      <line x1="60" y1="40" x2="200" y2="40" stroke="#43A047" stroke-width="3"/>
+      <text x="50" y="35" font-size="12" fill="#43A047">VCC</text>
+      <!-- RC from Vcc to collector -->
+      <rect x="180" y="40" width="20" height="40" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="190" y="55" text-anchor="middle" font-size="12" fill="#333">RC</text>
+      <line x1="190" y1="80" x2="190" y2="100" stroke="#333" stroke-width="2"/>
+      <!-- Collector to transistor -->
+      <line x1="190" y1="100" x2="170" y2="100" stroke="#333" stroke-width="2"/>
+      <!-- RE from emitter to ground -->
+      <rect x="160" y="160" width="20" height="40" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="170" y="185" text-anchor="middle" font-size="12" fill="#333">RE</text>
+      <line x1="170" y1="130" x2="170" y2="160" stroke="#333" stroke-width="2"/>
+      <!-- Emitter to ground -->
+      <line x1="170" y1="200" x2="170" y2="210" stroke="#444" stroke-width="3"/>
+      <line x1="160" y1="210" x2="180" y2="210" stroke="#444" stroke-width="3"/>
+      <line x1="163" y1="214" x2="177" y2="214" stroke="#444" stroke-width="2"/>
+      <line x1="166" y1="218" x2="174" y2="218" stroke="#444" stroke-width="2"/>
+      <text x="170" y="225" text-anchor="middle" font-size="12" fill="#444">GND</text>
+      <!-- Base bias resistor to ground -->
+      <rect x="80" y="100" width="20" height="40" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="90" y="115" text-anchor="middle" font-size="12" fill="#333">RB</text>
+      <line x1="90" y1="100" x2="90" y2="130" stroke="#333" stroke-width="2"/>
+      <line x1="90" y1="130" x2="170" y2="130" stroke="#333" stroke-width="2"/>
+      <line x1="90" y1="140" x2="90" y2="210" stroke="#333" stroke-width="2"/>
+      <line x1="90" y1="210" x2="170" y2="210" stroke="#333" stroke-width="2"/>
+    </svg>`;
+    // --- BJT Dual-Supply Bias ---
+    const dualSupply = `<svg width="340" height="260" viewBox="0 0 340 260">
+      ${arrowMarker}
+      <line x1="60" y1="40" x2="200" y2="40" stroke="#43A047" stroke-width="3"/>
+      <text x="50" y="35" font-size="12" fill="#43A047">VCC</text>
+      <!-- RC from Vcc to collector -->
+      <rect x="180" y="40" width="20" height="40" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="190" y="55" text-anchor="middle" font-size="12" fill="#333">RC</text>
+      <line x1="190" y1="80" x2="190" y2="100" stroke="#333" stroke-width="2"/>
+      <!-- Collector to transistor -->
+      <line x1="190" y1="100" x2="170" y2="100" stroke="#333" stroke-width="2"/>
+      <!-- RE from emitter to VEE -->
+      <rect x="160" y="180" width="20" height="40" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="170" y="205" text-anchor="middle" font-size="12" fill="#333">RE</text>
+      <line x1="170" y1="130" x2="170" y2="180" stroke="#333" stroke-width="2"/>
+      <!-- Emitter to VEE -->
+      <line x1="170" y1="220" x2="170" y2="240" stroke="#43A047" stroke-width="3"/>
+      <text x="170" y="255" text-anchor="middle" font-size="12" fill="#43A047">VEE</text>
+      <!-- Base bias resistor to ground -->
+      <rect x="80" y="100" width="20" height="40" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="90" y="115" text-anchor="middle" font-size="12" fill="#333">RB</text>
+      <line x1="90" y1="100" x2="90" y2="130" stroke="#333" stroke-width="2"/>
+      <line x1="90" y1="130" x2="170" y2="130" stroke="#333" stroke-width="2"/>
+    </svg>`;
     const schematics = {
-      'base': `<svg width="300" height="200" viewBox="0 0 300 200">
-        <line x1="50" y1="50" x2="150" y2="50" stroke="black" stroke-width="2"/>
-        <rect x="150" y="45" width="40" height="10" fill="none" stroke="black" stroke-width="2"/>
-        <text x="170" y="40" text-anchor="middle" font-size="12">RB</text>
-        <line x1="190" y1="50" x2="210" y2="50" stroke="black" stroke-width="2"/>
-        <circle cx="210" cy="50" r="3" fill="black"/>
-        <line x1="210" y1="50" x2="210" y2="80" stroke="black" stroke-width="2"/>
-        <line x1="200" y1="80" x2="220" y2="80" stroke="black" stroke-width="2"/>
-        <line x1="210" y1="80" x2="230" y2="60" stroke="black" stroke-width="2"/>
-        <line x1="210" y1="80" x2="230" y2="100" stroke="black" stroke-width="2"/>
-        <line x1="230" y1="60" x2="230" y2="30" stroke="black" stroke-width="2"/>
-        <line x1="230" y1="30" x2="280" y2="30" stroke="black" stroke-width="2"/>
-        <rect x="240" y="25" width="30" height="10" fill="none" stroke="black" stroke-width="2"/>
-        <text x="255" y="20" text-anchor="middle" font-size="12">RC</text>
-        <line x1="230" y1="100" x2="230" y2="130" stroke="black" stroke-width="2"/>
-        <rect x="220" y="130" width="20" height="10" fill="none" stroke="black" stroke-width="2"/>
-        <text x="230" y="155" text-anchor="middle" font-size="12">RE</text>
-        <line x1="230" y1="140" x2="230" y2="170" stroke="black" stroke-width="2"/>
-        <line x1="50" y1="30" x2="50" y2="170" stroke="black" stroke-width="2"/>
-        <line x1="280" y1="30" x2="280" y2="170" stroke="black" stroke-width="2"/>
-        <text x="40" y="100" text-anchor="middle" font-size="12">VCC</text>
-        <text x="50" y="185" text-anchor="middle" font-size="12">GND</text>
-      </svg>`,
-      'voltage-divider': `<svg width="300" height="250" viewBox="0 0 300 250">
-        <line x1="50" y1="50" x2="150" y2="50" stroke="black" stroke-width="2"/>
-        <rect x="150" y="45" width="40" height="10" fill="none" stroke="black" stroke-width="2"/>
-        <text x="170" y="40" text-anchor="middle" font-size="12">R1</text>
-        <line x1="190" y1="50" x2="210" y2="50" stroke="black" stroke-width="2"/>
-        <circle cx="210" cy="50" r="3" fill="black"/>
-        <line x1="210" y1="50" x2="210" y2="80" stroke="black" stroke-width="2"/>
-        <rect x="200" y="80" width="20" height="10" fill="none" stroke="black" stroke-width="2"/>
-        <text x="170" y="95" text-anchor="middle" font-size="12">R2</text>
-        <line x1="210" y1="90" x2="210" y2="120" stroke="black" stroke-width="2"/>
-        <circle cx="210" cy="120" r="3" fill="black"/>
-        <line x1="210" y1="120" x2="230" y2="120" stroke="black" stroke-width="2"/>
-        <line x1="220" y1="120" x2="240" y2="120" stroke="black" stroke-width="2"/>
-        <line x1="230" y1="120" x2="250" y2="100" stroke="black" stroke-width="2"/>
-        <line x1="230" y1="120" x2="250" y2="140" stroke="black" stroke-width="2"/>
-        <line x1="250" y1="100" x2="250" y2="70" stroke="black" stroke-width="2"/>
-        <line x1="250" y1="70" x2="300" y2="70" stroke="black" stroke-width="2"/>
-        <rect x="260" y="65" width="30" height="10" fill="none" stroke="black" stroke-width="2"/>
-        <text x="275" y="60" text-anchor="middle" font-size="12">RC</text>
-        <line x1="250" y1="140" x2="250" y2="170" stroke="black" stroke-width="2"/>
-        <rect x="240" y="170" width="20" height="10" fill="none" stroke="black" stroke-width="2"/>
-        <text x="250" y="195" text-anchor="middle" font-size="12">RE</text>
-        <line x1="250" y1="180" x2="250" y2="210" stroke="black" stroke-width="2"/>
-        <line x1="50" y1="50" x2="50" y2="210" stroke="black" stroke-width="2"/>
-        <line x1="300" y1="70" x2="300" y2="210" stroke="black" stroke-width="2"/>
-        <line x1="210" y1="120" x2="210" y2="210" stroke="black" stroke-width="2"/>
-        <line x1="250" y1="210" x2="250" y2="210" stroke="black" stroke-width="2"/>
-        <text x="40" y="130" text-anchor="middle" font-size="12">VCC</text>
-        <text x="50" y="225" text-anchor="middle" font-size="12">GND</text>
-      </svg>`,
-      'collector-feedback': `<svg width="300" height="200" viewBox="0 0 300 200">
-        <line x1="50" y1="50" x2="150" y2="50" stroke="black" stroke-width="2"/>
-        <rect x="150" y="45" width="40" height="10" fill="none" stroke="black" stroke-width="2"/>
-        <text x="170" y="40" text-anchor="middle" font-size="12">RC</text>
-        <line x1="190" y1="50" x2="210" y2="50" stroke="black" stroke-width="2"/>
-        <circle cx="210" cy="50" r="3" fill="black"/>
-        <line x1="210" y1="50" x2="210" y2="30" stroke="black" stroke-width="2"/>
-        <line x1="210" y1="30" x2="150" y2="30" stroke="black" stroke-width="2"/>
-        <line x1="150" y1="30" x2="150" y2="70" stroke="black" stroke-width="2"/>
-        <rect x="140" y="70" width="20" height="10" fill="none" stroke="black" stroke-width="2"/>
-        <text x="110" y="85" text-anchor="middle" font-size="12">RB</text>
-        <line x1="150" y1="80" x2="150" y2="100" stroke="black" stroke-width="2"/>
-        <line x1="150" y1="100" x2="170" y2="100" stroke="black" stroke-width="2"/>
-        <line x1="160" y1="100" x2="180" y2="100" stroke="black" stroke-width="2"/>
-        <line x1="170" y1="100" x2="190" y2="80" stroke="black" stroke-width="2"/>
-        <line x1="170" y1="100" x2="190" y2="120" stroke="black" stroke-width="2"/>
-        <line x1="190" y1="80" x2="190" y2="50" stroke="black" stroke-width="2"/>
-        <line x1="190" y1="120" x2="190" y2="150" stroke="black" stroke-width="2"/>
-        <line x1="50" y1="50" x2="50" y2="150" stroke="black" stroke-width="2"/>
-        <line x1="190" y1="150" x2="50" y2="150" stroke="black" stroke-width="2"/>
-        <text x="40" y="100" text-anchor="middle" font-size="12">VCC</text>
-        <text x="50" y="165" text-anchor="middle" font-size="12">GND</text>
-      </svg>`
+      'base': baseBias,
+      'voltage-divider': voltageDivider,
+      'collector-feedback': collectorFeedback,
+      'emitter-bias': emitterBias,
+      'dual-supply': dualSupply,
     };
     return schematics[biasType] || '<svg width="300" height="200"><text x="150" y="100" text-anchor="middle">Schematic not available</text></svg>';
   }
@@ -695,48 +796,146 @@ class OpAmpSolver {
   }
 
   static getSVG(config) {
+    const themeBlue = '#2196F3';
+    const themeRed = '#ff4444';
+    const themeWire = '#333';
+    const themeResistor = '#FFC107';
+    const opampTriangle = `<polygon points="150,60 150,120 220,90" fill="white" stroke="${themeWire}" stroke-width="3"/>`;
+    const plusMinus = `
+      <text x="145" y="80" text-anchor="middle" font-size="16" fill="${themeWire}">+</text>
+      <text x="145" y="110" text-anchor="middle" font-size="16" fill="${themeWire}">-</text>
+    `;
+    const resistorSymbol = (x, y, label) => `
+      <g>
+        <rect x="${x - 15}" y="${y - 5}" width="30" height="10" fill="${themeResistor}" stroke="${themeWire}" stroke-width="2" rx="3"/>
+        <text x="${x}" y="${y - 8}" text-anchor="middle" font-size="12" fill="${themeWire}">${label}</text>
+      </g>
+    `;
+    // --- Op-Amp Inverting Amplifier (restore previous version) ---
+    const inverting = `<svg width="340" height="180" viewBox="0 0 340 180">
+      <!-- Op-amp triangle -->
+      <polygon points="180,80 180,140 260,110" fill="white" stroke="#333" stroke-width="3"/>
+      <!-- + and - -->
+      <text x="175" y="100" text-anchor="middle" font-size="16" fill="#333">-</text>
+      <text x="175" y="130" text-anchor="middle" font-size="16" fill="#333">+</text>
+      <!-- Input Vin to R1 -->
+      <line x1="60" y1="100" x2="110" y2="100" stroke="#2196F3" stroke-width="2"/>
+      <text x="60" y="90" text-anchor="middle" font-size="12" fill="#2196F3">Vin</text>
+      <rect x="110" y="90" width="30" height="20" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="125" y="85" text-anchor="middle" font-size="12" fill="#333">R1</text>
+      <!-- R1 to op-amp - input -->
+      <line x1="140" y1="100" x2="180" y2="100" stroke="#333" stroke-width="2"/>
+      <!-- Feedback R2 from output to - input -->
+      <rect x="220" y="80" width="30" height="20" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="235" y="75" text-anchor="middle" font-size="12" fill="#333">R2</text>
+      <line x1="250" y1="110" x2="250" y2="90" stroke="#333" stroke-width="2"/>
+      <line x1="250" y1="90" x2="180" y2="100" stroke="#333" stroke-width="2"/>
+      <!-- + input to ground -->
+      <line x1="180" y1="130" x2="180" y2="160" stroke="#444" stroke-width="2"/>
+      <line x1="170" y1="160" x2="190" y2="160" stroke="#444" stroke-width="2"/>
+      <text x="180" y="175" text-anchor="middle" font-size="12" fill="#444">GND</text>
+      <!-- Output -->
+      <line x1="260" y1="110" x2="300" y2="110" stroke="#ff4444" stroke-width="3"/>
+      <circle cx="300" cy="110" r="5" fill="#ff4444"/>
+      <text x="310" y="110" text-anchor="start" font-size="12" fill="#ff4444">Vout</text>
+    </svg>`;
+    // --- Op-Amp Non-Inverting Amplifier (standard ground symbol) ---
+    const nonInverting = `<svg width="340" height="180" viewBox="0 0 340 180">
+      <!-- Op-amp triangle -->
+      <polygon points="180,80 180,140 260,110" fill="white" stroke="#333" stroke-width="3"/>
+      <!-- + and - -->
+      <text x="175" y="100" text-anchor="middle" font-size="16" fill="#333">-</text>
+      <text x="175" y="130" text-anchor="middle" font-size="16" fill="#333">+</text>
+      <!-- Vin to + input (horizontal, below triangle) -->
+      <line x1="60" y1="130" x2="180" y2="130" stroke="#2196F3" stroke-width="2"/>
+      <text x="60" y="140" text-anchor="middle" font-size="12" fill="#2196F3">Vin</text>
+      <!-- - input to R1 to ground (vertical, left of triangle) -->
+      <line x1="180" y1="100" x2="140" y2="100" stroke="#333" stroke-width="2"/>
+      <rect x="110" y="90" width="30" height="20" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="125" y="85" text-anchor="middle" font-size="12" fill="#333">R1</text>
+      <line x1="140" y1="100" x2="140" y2="160" stroke="#333" stroke-width="2"/>
+      <rect x="125" y="160" width="30" height="20" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="140" y="195" text-anchor="middle" font-size="12" fill="#333">R2</text>
+      <line x1="140" y1="180" x2="140" y2="210" stroke="#333" stroke-width="2"/>
+      <!-- Standard ground symbol -->
+      <line x1="140" y1="210" x2="140" y2="214" stroke="#444" stroke-width="2"/>
+      <line x1="134" y1="214" x2="146" y2="214" stroke="#444" stroke-width="2"/>
+      <line x1="136" y1="216" x2="144" y2="216" stroke="#444" stroke-width="1.5"/>
+      <line x1="138" y1="218" x2="142" y2="218" stroke="#444" stroke-width="1"/>
+      <text x="140" y="225" text-anchor="middle" font-size="12" fill="#444">GND</text>
+      <!-- Feedback from output to - input (above triangle, no overlap) -->
+      <line x1="260" y1="110" x2="260" y2="70" stroke="#333" stroke-width="2"/>
+      <rect x="210" y="60" width="30" height="20" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="225" y="55" text-anchor="middle" font-size="12" fill="#333">R2</text>
+      <line x1="260" y1="70" x2="240" y2="70" stroke="#333" stroke-width="2"/>
+      <line x1="210" y1="70" x2="180" y2="100" stroke="#333" stroke-width="2"/>
+      <!-- Output -->
+      <line x1="260" y1="110" x2="300" y2="110" stroke="#ff4444" stroke-width="3"/>
+      <circle cx="300" cy="110" r="5" fill="#ff4444"/>
+      <text x="310" y="110" text-anchor="start" font-size="12" fill="#ff4444">Vout</text>
+    </svg>`;
+    // --- Op-Amp Summing ---
+    const summing = `<svg width="340" height="200" viewBox="0 0 340 200">
+      <polygon points="150,75 150,125 220,100" fill="white" stroke="#333" stroke-width="3"/>
+      <text x="145" y="95" text-anchor="middle" font-size="16" fill="#333">-</text>
+      <text x="145" y="115" text-anchor="middle" font-size="16" fill="#333">+</text>
+      <line x1="40" y1="60" x2="150" y2="90" stroke="#2196F3" stroke-width="2"/>
+      <text x="40" y="70" text-anchor="middle" font-size="12" fill="#2196F3">Vin1</text>
+      <line x1="40" y1="120" x2="150" y2="110" stroke="#2196F3" stroke-width="2"/>
+      <text x="40" y="130" text-anchor="middle" font-size="12" fill="#2196F3">Vin2</text>
+      <rect x="245" y="100" width="30" height="10" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="260" y="95" text-anchor="middle" font-size="12" fill="#333">Rf</text>
+      <line x1="220" y1="100" x2="245" y2="105" stroke="#333" stroke-width="2"/>
+      <line x1="275" y1="105" x2="300" y2="105" stroke="#333" stroke-width="2"/>
+      <circle cx="300" cy="105" r="5" fill="#ff4444"/>
+      <text x="300" y="95" text-anchor="middle" font-size="12" fill="#ff4444">Vout</text>
+    </svg>`;
+    // --- Op-Amp Integrator ---
+    const integrator = `<svg width="340" height="180" viewBox="0 0 340 180">
+      <polygon points="150,60 150,120 220,90" fill="white" stroke="#333" stroke-width="3"/>
+      <text x="145" y="80" text-anchor="middle" font-size="16" fill="#333">-</text>
+      <text x="145" y="110" text-anchor="middle" font-size="16" fill="#333">+</text>
+      <line x1="40" y1="90" x2="150" y2="90" stroke="#2196F3" stroke-width="2"/>
+      <text x="40" y="80" text-anchor="middle" font-size="12" fill="#2196F3">Vin</text>
+      <rect x="245" y="90" width="30" height="10" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="260" y="85" text-anchor="middle" font-size="12" fill="#333">R</text>
+      <rect x="245" y="120" width="30" height="10" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="260" y="135" text-anchor="middle" font-size="12" fill="#333">C</text>
+      <line x1="220" y1="90" x2="245" y2="95" stroke="#333" stroke-width="2"/>
+      <line x1="220" y1="120" x2="245" y2="125" stroke="#333" stroke-width="2"/>
+      <line x1="275" y1="95" x2="300" y2="95" stroke="#333" stroke-width="2"/>
+      <line x1="275" y1="125" x2="300" y2="125" stroke="#333" stroke-width="2"/>
+      <circle cx="300" cy="110" r="5" fill="#ff4444"/>
+      <text x="300" y="100" text-anchor="middle" font-size="12" fill="#ff4444">Vout</text>
+    </svg>`;
+    // --- Op-Amp Instrumentation ---
+    const instrumentation = `<svg width="340" height="200" viewBox="0 0 340 200">
+      <polygon points="150,75 150,125 220,100" fill="white" stroke="#333" stroke-width="3"/>
+      <text x="145" y="95" text-anchor="middle" font-size="16" fill="#333">-</text>
+      <text x="145" y="115" text-anchor="middle" font-size="16" fill="#333">+</text>
+      <line x1="40" y1="60" x2="150" y2="90" stroke="#2196F3" stroke-width="2"/>
+      <text x="40" y="70" text-anchor="middle" font-size="12" fill="#2196F3">Vin1</text>
+      <line x1="40" y1="120" x2="150" y2="110" stroke="#2196F3" stroke-width="2"/>
+      <text x="40" y="130" text-anchor="middle" font-size="12" fill="#2196F3">Vin2</text>
+      <rect x="245" y="100" width="30" height="10" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="260" y="95" text-anchor="middle" font-size="12" fill="#333">Rg</text>
+      <rect x="245" y="120" width="30" height="10" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="260" y="135" text-anchor="middle" font-size="12" fill="#333">R1</text>
+      <rect x="245" y="140" width="30" height="10" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="260" y="155" text-anchor="middle" font-size="12" fill="#333">R2</text>
+      <rect x="245" y="160" width="30" height="10" fill="#FFC107" stroke="#333" stroke-width="2" rx="3"/>
+      <text x="260" y="175" text-anchor="middle" font-size="12" fill="#333">R3</text>
+      <line x1="220" y1="100" x2="245" y2="105" stroke="#333" stroke-width="2"/>
+      <line x1="275" y1="105" x2="300" y2="105" stroke="#333" stroke-width="2"/>
+      <circle cx="300" cy="105" r="5" fill="#ff4444"/>
+      <text x="300" y="95" text-anchor="middle" font-size="12" fill="#ff4444">Vout</text>
+    </svg>`;
     const schematics = {
-      'inverting': `<svg width="300" height="150" viewBox="0 0 300 150">
-        <polygon points="150,50 150,100 200,75" fill="none" stroke="black" stroke-width="2"/>
-        <line x1="50" y1="60" x2="120" y2="60" stroke="black" stroke-width="2"/>
-        <rect x="120" y="55" width="30" height="10" fill="none" stroke="black" stroke-width="2"/>
-        <text x="135" y="50" text-anchor="middle" font-size="10">R1</text>
-        <line x1="120" y1="60" x2="150" y2="60" stroke="black" stroke-width="2"/>
-        <line x1="155" y1="85" x2="155" y2="100" stroke="black" stroke-width="2"/>
-        <line x1="155" y1="100" x2="250" y2="100" stroke="black" stroke-width="2"/>
-        <line x1="250" y1="100" x2="250" y2="75" stroke="black" stroke-width="2"/>
-        <line x1="200" y1="75" x2="250" y2="75" stroke="black" stroke-width="2"/>
-        <rect x="210" y="70" width="30" height="10" fill="none" stroke="black" stroke-width="2"/>
-        <text x="225" y="65" text-anchor="middle" font-size="10">R2</text>
-        <text x="145" y="65" text-anchor="middle" font-size="12">-</text>
-        <text x="145" y="90" text-anchor="middle" font-size="12">+</text>
-        <text x="40" y="65" text-anchor="middle" font-size="12">Vin</text>
-        <text x="260" y="80" text-anchor="middle" font-size="12">Vout</text>
-      </svg>`,
-      'summing': `<svg width="300" height="200" viewBox="0 0 300 200">
-        <polygon points="150,75 150,125 200,100" fill="none" stroke="black" stroke-width="2"/>
-        <line x1="50" y1="60" x2="120" y2="60" stroke="black" stroke-width="2"/>
-        <rect x="120" y="55" width="30" height="10" fill="none" stroke="black" stroke-width="2"/>
-        <text x="135" y="50" text-anchor="middle" font-size="10">R1</text>
-        <line x1="50" y1="90" x2="120" y2="90" stroke="black" stroke-width="2"/>
-        <rect x="120" y="85" width="30" height="10" fill="none" stroke="black" stroke-width="2"/>
-        <text x="135" y="80" text-anchor="middle" font-size="10">R2</text>
-        <line x1="120" y1="60" x2="140" y2="60" stroke="black" stroke-width="2"/>
-        <line x1="120" y1="90" x2="140" y2="90" stroke="black" stroke-width="2"/>
-        <line x1="140" y1="60" x2="140" y2="90" stroke="black" stroke-width="2"/>
-        <line x1="140" y1="75" x2="150" y2="85" stroke="black" stroke-width="2"/>
-        <line x1="155" y1="110" x2="155" y2="125" stroke="black" stroke-width="2"/>
-        <line x1="155" y1="125" x2="250" y2="125" stroke="black" stroke-width="2"/>
-        <line x1="250" y1="125" x2="250" y2="100" stroke="black" stroke-width="2"/>
-        <line x1="200" y1="100" x2="250" y2="100" stroke="black" stroke-width="2"/>
-        <rect x="210" y="95" width="30" height="10" fill="none" stroke="black" stroke-width="2"/>
-        <text x="225" y="90" text-anchor="middle" font-size="10">Rf</text>
-        <text x="145" y="90" text-anchor="middle" font-size="12">-</text>
-        <text x="145" y="115" text-anchor="middle" font-size="12">+</text>
-        <text x="30" y="65" text-anchor="middle" font-size="12">Vin1</text>
-        <text x="30" y="95" text-anchor="middle" font-size="12">Vin2</text>
-        <text x="270" y="105" text-anchor="middle" font-size="12">Vout</text>
-      </svg>`
+      'inverting': inverting,
+      'non-inverting': nonInverting,
+      'summing': summing,
+      'integrator': integrator,
+      'instrumentation': instrumentation,
     };
     return schematics[config] || '<svg width="300" height="150"><text x="150" y="75" text-anchor="middle">Schematic available</text></svg>';
   }
