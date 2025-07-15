@@ -1423,8 +1423,28 @@ class ElectroSolveApp {
           return;
         }
         try {
+          const { vars, table } = getTruthTable(expr);
+          if (vars.length > 4) {
+            booleanResult.innerHTML = '<div class="error-message">Too many variables to minimize.</div>';
+            return;
+          }
+          const minterms = table.map((row, i) => row.out === 1 ? i : null).filter(i => i !== null);
           const simplified = simplifyExpr(expr);
-          booleanResult.innerHTML = `<div class="success-message">Simplified: <b>${simplified}</b></div>`;
+          // Render truth table
+          let html = '<div class="kmap-step"><b>Truth Table</b><br>';
+          html += `<table class="truth-table"><thead><tr>${vars.map(v => `<th>${v}</th>`).join('')}<th>Output</th></tr></thead><tbody>`;
+          for (const row of table) {
+            html += `<tr>${vars.map(v => `<td>${row[v]}</td>`).join('')}<td>${row.out}</td></tr>`;
+          }
+          html += '</tbody></table></div>';
+          // Render K-map
+          html += '<div class="kmap-step"><b>Karnaugh Map</b><br>';
+          html += renderKMap(vars, minterms);
+          html += '</div>';
+          // Render simplification steps
+          html += `<div class="success-message">Simplified: <b>${simplified}</b></div>`;
+          html += renderKMapSteps(vars.length, minterms, []);
+          booleanResult.innerHTML = html;
         } catch (err) {
           booleanResult.innerHTML = `<div class="error-message">Error: ${err.message}</div>`;
         }
@@ -1991,8 +2011,56 @@ function simplifyExpr(expr) {
   if (vars.length > 4) return 'Too many variables to minimize';
   // Get minterms
   const minterms = table.map((row, i) => row.out === 1 ? i : null).filter(i => i !== null);
-  // For now, just return sum of minterms (SOP)
-  return mintermsToExpr(vars, minterms);
+  // Use Quine-McCluskey minimization (reuse logic from renderKMapSteps)
+  function qmMinimize(n, minterms) {
+    if (minterms.length === 0) return '0';
+    if (minterms.length === (1 << n)) return '1';
+    let terms = minterms.map(m => ({ms: [m], mask: 0, used: false}));
+    let next = [], primeImplicants = [];
+    while (terms.length) {
+      let marked = new Array(terms.length).fill(false);
+      for (let i = 0; i < terms.length; i++) {
+        for (let j = i+1; j < terms.length; j++) {
+          let diff = terms[i].ms[0] ^ terms[j].ms[0];
+          if (diff && (diff & (diff-1)) === 0 && terms[i].mask === terms[j].mask) {
+            let mask = terms[i].mask | diff;
+            let ms = Array.from(new Set(terms[i].ms.concat(terms[j].ms))).sort((a,b)=>a-b);
+            let exists = next.find(t => t.ms.join(',') === ms.join(',') && t.mask === mask);
+            if (!exists) next.push({ms, mask, used: false});
+            marked[i] = marked[j] = true;
+          }
+        }
+      }
+      for (let i = 0; i < terms.length; i++) {
+        if (!marked[i] && !terms[i].used) primeImplicants.push(terms[i]);
+      }
+      if (next.length === 0) break;
+      terms = next;
+      next = [];
+    }
+    // Cover minterms with prime implicants (greedy)
+    let covered = new Set();
+    let cover = [];
+    for (let t of primeImplicants) {
+      let covers = t.ms.filter(m => minterms.includes(m));
+      if (covers.length) {
+        cover.push(t);
+        covers.forEach(m => covered.add(m));
+      }
+      if (covered.size === minterms.length) break;
+    }
+    function termToExpr(t) {
+      let bits = [];
+      for (let i = n-1; i >= 0; i--) {
+        if ((t.mask & (1<<i)) === 0) {
+          bits.push(((t.ms[0]>>i)&1) ? vars[n-i-1] : vars[n-i-1]+"'");
+        }
+      }
+      return bits.join('');
+    }
+    return cover.map(termToExpr).join(' + ') || '0';
+  }
+  return qmMinimize(vars.length, minterms);
 }
 // Karnaugh Map rendering and grouping logic
 function renderKMap(vars, minterms) {
